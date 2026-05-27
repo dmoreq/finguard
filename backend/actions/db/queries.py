@@ -217,6 +217,27 @@ async def list_transactions(
     return [TransactionRow.model_validate(row) for row in response.data]
 
 
+async def get_transaction(
+    client: AsyncClient,
+    user_id: str,
+    transaction_id: str,
+) -> TransactionRow | None:
+    """Fetch a single transaction scoped to user_id."""
+    response = (
+        await client.table("transactions")
+        .select("*")
+        .eq("id", transaction_id)
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if response.data:
+        return TransactionRow.model_validate(response.data)
+
+    return None
+
+
 async def delete_transaction(
     client: AsyncClient,
     user_id: str,

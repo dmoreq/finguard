@@ -15,9 +15,6 @@ dependencies = [
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
 
-    # LLM routing
-    "litellm>=1.55",
-
     # Database
     "supabase>=2.10",
 

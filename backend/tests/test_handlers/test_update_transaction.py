@@ -26,6 +26,11 @@ async def test_update_transaction_confirms_pending(
     with (
         patch("actions.handlers.update_transaction.get_supabase", return_value=mock_cm),
         patch(
+            "actions.handlers.update_transaction.get_transaction",
+            new_callable=AsyncMock,
+            return_value=sample_transaction_row,
+        ),
+        patch(
             "actions.handlers.update_transaction.update_transaction",
             new_callable=AsyncMock,
             return_value=confirmed,

@@ -7,7 +7,7 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
 from actions.db.client import get_supabase
-from actions.db.queries import update_transaction
+from actions.db.queries import get_transaction, update_transaction
 from actions.utils.formatting import format_transaction_summary
 from actions.utils.pending import clear_pending_slots, get_pending_transaction_ids
 
@@ -48,7 +48,23 @@ class ActionUpdateTransaction(Action):
 
         try:
             async with get_supabase() as client:
-                row = await update_transaction(client, user_id, transaction_id, updates)
+                existing = await get_transaction(client, user_id, transaction_id)
+                if not existing:
+                    dispatcher.utter_message(text="Couldn't find that transaction.")
+                    return []
+
+                if updates.get("status") == "confirmed":
+                    if existing.status == "confirmed":
+                        row = existing
+                    elif existing.status != "pending_confirmation":
+                        dispatcher.utter_message(
+                            text="That transaction is no longer waiting to confirm."
+                        )
+                        return clear_pending_slots()
+                    else:
+                        row = await update_transaction(client, user_id, transaction_id, updates)
+                else:
+                    row = await update_transaction(client, user_id, transaction_id, updates)
         except Exception as e:
             logger.exception(
                 "update_transaction_failed",
