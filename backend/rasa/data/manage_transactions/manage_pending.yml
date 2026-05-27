@@ -1,0 +1,62 @@
+flows:
+  confirm_pending_transaction:
+    name: "Confirm pending transaction"
+    description: >
+      Confirm and save the pending transaction shown after recording an expense or income.
+      Use when the user says confirm, yes, save, looks good, that's correct, or approves
+      the transaction card.
+    if: slots.confirmation_pending and slots.last_transaction_id
+    steps:
+      - action: action_update_transaction
+
+  discard_pending_transaction:
+    name: "Discard pending transaction"
+    description: >
+      Discard or cancel the pending transaction before it is saved to their records.
+      Use when the user says discard, cancel, no, delete it, never mind, or rejects
+      the pending transaction.
+    if: slots.confirmation_pending and slots.last_transaction_id
+    steps:
+      - action: action_delete_transaction
+
+  edit_pending_transaction:
+    name: "Edit pending transaction"
+    description: >
+      Change amount, category, date, or description on the pending transaction before
+      confirming. Use when the user wants to edit, change, fix, or update the pending
+      entry (e.g. "change amount to 50", "category should be dining").
+    if: slots.confirmation_pending and slots.last_transaction_id
+    steps:
+      - collect: amount
+        description: >
+          New transaction amount as a number. Only extract if the user explicitly
+          wants to change the amount.
+        ask_before_filling: false
+
+      - collect: category
+        description: >
+          New spending or income category. Only extract if the user wants to change
+          the category.
+        ask_before_filling: false
+
+      - collect: transaction_date
+        description: >
+          New date (today, yesterday, or ISO). Only extract if the user wants to
+          change the date.
+        ask_before_filling: false
+
+      - collect: description
+        description: >
+          New note or description. Only extract if the user wants to change the note.
+        ask_before_filling: false
+
+      - action: action_update_transaction
+
+  no_pending_transaction:
+    name: "No pending transaction"
+    description: >
+      User tried to confirm, discard, or edit a transaction but none is waiting.
+      Use when they say confirm or cancel but confirmation_pending is false.
+    if: not slots.confirmation_pending or not slots.last_transaction_id
+    steps:
+      - action: utter_no_pending_transaction

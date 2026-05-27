@@ -1,0 +1,14 @@
+fixtures:
+  - pending_transaction:
+      - user_id: "test-user-001"
+      - user_currency: "USD"
+      - user_timezone: "UTC"
+      - confirmation_pending: true
+      - last_transaction_id: "tx-pending-001"
+      - amount: 45.0
+      - category: "groceries"
+
+  - no_pending_transaction:
+      - user_id: "test-user-001"
+      - confirmation_pending: false
+      - last_transaction_id: null

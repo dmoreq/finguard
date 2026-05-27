@@ -1,0 +1,45 @@
+# LiteLLM Provider Routing Configuration
+# Routes LLM calls to Gemini (primary) or DeepSeek (fallback)
+
+model_list:
+  # Primary: Gemini 2.0 Flash (free tier)
+  - model_name: finguard-primary
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+      api_key: os.environ/GEMINI_API_KEY
+      rpm: 15                       # Gemini free tier: 15 RPM
+      tpm: 1000000                  # 1M tokens/min
+
+  # Fallback: DeepSeek V3 (cheap with prefix caching)
+  - model_name: finguard-fallback
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+      cache_control: true           # Enable prefix caching for system prompt
+
+router_settings:
+  # Intelligent routing: use model 1 first, fallback if rate-limited
+  routing_strategy: "usage-based-routing-v2"
+  fallbacks:
+    - finguard-primary: [finguard-fallback]
+
+  # Retry configuration
+  num_retries: 2
+  retry_after: 5                    # seconds
+
+  # Budget tracking (optional hard cap)
+  # max_budget: 5.00                # USD/month hard limit
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # Store logs for cost analysis
+  store_model_in_db: false
+  # Log format
+  json_logs: true
+  log_file_dir: "./logs"
+
+litellm_settings:
+  # Reduce latency by dropping unknown params
+  drop_params: true
+  # Enable context caching for DeepSeek
+  enable_cache: true

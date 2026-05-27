@@ -48,7 +48,7 @@ repos:
     hooks:
       - id: pyright
         name: pyright type check
-        entry: bash -c 'cd backend && npx -y pyright'
+        entry: bash -c 'cd backend && uv run pyright'
         language: system
         files: ^backend/actions/.*\.py$
         exclude: ^backend/.venv/
@@ -60,7 +60,7 @@ repos:
     hooks:
       - id: bandit
         name: bandit security check
-        args: [-r, backend/actions, --severity-level=medium]
+        args: [--severity-level=medium]
         files: ^backend/actions/.*\.py$
         exclude: ^backend/.venv/
 

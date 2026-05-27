@@ -1,0 +1,75 @@
+[project]
+name = "finguard-backend"
+version = "0.1.0"
+description = "Finguard CALM action server — financial AI backend"
+requires-python = ">=3.12"
+authors = [{ name = "Finguard", email = "dev@finguard.local" }]
+
+dependencies = [
+    # Action server only — full Rasa CALM runs in Docker (rasa/rasa:3.9-full)
+    "rasa-sdk>=3.9,<4",
+
+    # Action server
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+
+    # LLM routing
+    "litellm>=1.55",
+
+    # Database
+    "supabase>=2.10",
+
+    # HTTP
+    "httpx>=0.28",
+
+    # Logging
+    "loguru>=0.7",
+
+    # DateTime
+    "pendulum>=3.0",
+
+    # Resilience
+    "tenacity>=9.0",
+
+    # Config
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-httpx>=0.35",
+    "ruff>=0.8",
+    "pyright>=1.1",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+ignore = ["TC002", "TC003"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = ["actions"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.uv]
+package = false
+# supabase/realtime requires websockets>=13; rasa-sdk pins <12 — override for action server
+override-dependencies = ["websockets>=13,<16"]
