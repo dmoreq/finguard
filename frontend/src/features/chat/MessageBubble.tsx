@@ -2,27 +2,39 @@
 
 import { ReportCard } from "@/features/reports/ReportCard";
 import { TransactionCard } from "@/features/transactions/TransactionCard";
-import type { Transaction } from "@/features/transactions/types";
+import type { Transaction, TransactionStatus } from "@/features/transactions/types";
 import { renderSimpleMarkdown } from "./markdown";
 import type { ChatMessage } from "./types";
 
 type Props = {
   message: ChatMessage;
+  transactions: Transaction[];
   onConfirm: (messageId: string, transaction: Transaction) => void;
   onCancel: (messageId: string) => void;
 };
 
-export function MessageBubble({ message, onConfirm, onCancel }: Props) {
+function resolveTxStatus(message: ChatMessage, transactions: Transaction[]): TransactionStatus {
+  if (message.txStatus === "confirmed" || message.txStatus === "discarded") {
+    return message.txStatus;
+  }
+  const id = message.transaction?.id;
+  if (!id) return "pending_confirmation";
+  const row = transactions.find((tx) => tx.id === id);
+  return row?.status ?? message.txStatus ?? "pending_confirmation";
+}
+
+export function MessageBubble({ message, transactions, onConfirm, onCancel }: Props) {
   const isUser = message.role === "user";
 
   if (message.type === "transaction" && message.transaction) {
+    const txStatus = resolveTxStatus(message, transactions);
     return (
       <div className="msg" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <AIBubble content={message.content} />
         <div className="card-offset">
           <TransactionCard
             transaction={message.transaction}
-            txStatus={message.txStatus}
+            txStatus={txStatus}
             onConfirm={(transaction) => onConfirm(message.id, transaction)}
             onCancel={() => onCancel(message.id)}
           />

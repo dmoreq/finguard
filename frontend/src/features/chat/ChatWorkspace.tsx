@@ -4,7 +4,8 @@ import { useSession } from "@/features/auth/useSession";
 import { DashboardPanel } from "@/features/reports/DashboardPanel";
 import type { Transaction } from "@/features/transactions/types";
 import {
-  clearUserFinancialData,
+  clearAllTransactions,
+  clearChatHistory,
   fetchChatMessages,
   fetchUserTransactions,
   persistChatMessage,
@@ -89,10 +90,16 @@ export function ChatWorkspace() {
   });
 
   const push = async (message: ChatMessage) => {
+    const localId = message.id;
     setMessages((current) => [...current, message]);
     if (!userId || message.id === "welcome") return;
     try {
-      await persistChatMessage(message, userId);
+      const dbId = await persistChatMessage(message, userId);
+      if (dbId && dbId !== localId) {
+        setMessages((current) =>
+          current.map((item) => (item.id === localId ? { ...item, id: dbId } : item)),
+        );
+      }
     } catch {
       // Chat still works; persistence failure is non-fatal for the turn
     }
@@ -202,15 +209,24 @@ export function ChatWorkspace() {
     await sendToAssistant("discard that transaction", { showUserMessage: false });
   };
 
-  const handleReset = async () => {
-    if (!window.confirm("Clear all messages and transactions? This cannot be undone.")) return;
+  const handleClearChat = async () => {
+    if (!window.confirm("Clear chat history? Transactions stay in your records.")) return;
     try {
-      await clearUserFinancialData();
+      await clearChatHistory();
       setMessages([welcomeMessage]);
-      setTransactions([]);
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Could not reset data.";
-      window.alert(detail);
+      window.alert(error instanceof Error ? error.message : "Could not clear chat.");
+    }
+  };
+
+  const handleClearTransactions = async () => {
+    if (!window.confirm("Delete all transactions? This cannot be undone.")) return;
+    try {
+      await clearAllTransactions();
+      setTransactions([]);
+      await refreshTransactions();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not clear transactions.");
     }
   };
 
@@ -256,8 +272,17 @@ export function ChatWorkspace() {
           >
             {sidebarOpen ? "Hide Overview" : "Overview"}
           </button>
-          <button className="button button-ghost header-button" onClick={() => void handleReset()}>
-            Reset
+          <button
+            className="button button-ghost header-button"
+            onClick={() => void handleClearChat()}
+          >
+            Clear chat
+          </button>
+          <button
+            className="button button-ghost header-button"
+            onClick={() => void handleClearTransactions()}
+          >
+            Clear txs
           </button>
           <button
             className="button button-ghost header-button"
@@ -288,6 +313,7 @@ export function ChatWorkspace() {
               <MessageBubble
                 key={message.id}
                 message={message}
+                transactions={transactions}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
               />

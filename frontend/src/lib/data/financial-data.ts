@@ -41,15 +41,21 @@ export async function fetchChatMessages(limit = 80): Promise<ChatMessage[]> {
   return messages;
 }
 
-export async function persistChatMessage(message: ChatMessage, userId: string): Promise<void> {
-  if (message.id === "welcome") return;
+export async function persistChatMessage(
+  message: ChatMessage,
+  userId: string,
+): Promise<string | null> {
+  if (message.id === "welcome") return null;
 
   const supabase = createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("chat_messages")
-    .insert(chatMessageToInsert(message, userId));
+    .insert(chatMessageToInsert(message, userId))
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
+  return typeof data?.id === "string" ? data.id : null;
 }
 
 export async function updateChatMessageTxStatus(
@@ -75,14 +81,20 @@ export async function updateChatMessageTxStatus(
   if (error) throw new Error(error.message);
 }
 
-export async function clearUserFinancialData(): Promise<void> {
+export async function clearChatHistory(): Promise<void> {
   const supabase = createClient();
+  const { error } = await supabase.from("chat_messages").delete().neq("id", ALL_ROWS);
+  if (error) throw new Error(error.message);
+}
 
-  const { error: txError } = await supabase.from("transactions").delete().neq("id", ALL_ROWS);
+export async function clearAllTransactions(): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("transactions").delete().neq("id", ALL_ROWS);
+  if (error) throw new Error(error.message);
+}
 
-  if (txError) throw new Error(txError.message);
-
-  const { error: msgError } = await supabase.from("chat_messages").delete().neq("id", ALL_ROWS);
-
-  if (msgError) throw new Error(msgError.message);
+/** Deletes all chat messages and transactions for the current user (RLS-scoped). */
+export async function clearUserFinancialData(): Promise<void> {
+  await clearChatHistory();
+  await clearAllTransactions();
 }
