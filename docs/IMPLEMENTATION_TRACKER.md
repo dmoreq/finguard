@@ -13,6 +13,7 @@
 Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, and local action server**. Phase 3 started with **balance RPC migration** and **`update_transaction` handler**.
 
 **Key Planning Docs:**
+- `docs/SYSTEM_DESIGN_REVIEW.md` — Architecture review, threat model, scorecards, improvement actions
 - `docs/rasa-calm-backend-plan.md` — Full architecture and configuration reference
 - `docs/PHASE_1_SUMMARY.md` — What Phase 1 built (35 files)
 - This file — Progress and day-to-day status
@@ -28,7 +29,18 @@ Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, a
 | **3 — Database & Gaps** | RPC migration, update handler | 🟡 In progress |
 | **4 — Backend Tests** | Handler unit tests with mocked Supabase | ✅ Complete |
 | **5 — Frontend Integration** | `/api/chat` bridge, ChatWorkspace | ✅ Complete |
+| **5b — Data & Auth consolidation** | Supabase Auth, DB SoT, legacy parse gated | ✅ Complete |
 | **6 — Hardening & Deploy** | Rate limits, Redis, deploy | ⭕ Pending |
+
+---
+
+## Phase 5b — Frontend Supabase consolidation ✅
+
+- [x] `@supabase/ssr` + cookie session middleware
+- [x] `/login` + `/auth/callback`
+- [x] Chat loads transactions + messages from Supabase (RLS)
+- [x] `/api/chat` requires auth; Rasa only (legacy parse behind `ENABLE_LEGACY_AI_PARSE`)
+- [x] Removed `localStorage` as source of truth
 
 ---
 
@@ -118,6 +130,16 @@ Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, a
 ### Session 2 (2026-05-27) — Phase 1 Scaffold ✅
 
 Created 35 backend files.
+
+---
+
+## Scorecard history
+
+| Date | Vision | Backend | Frontend | Integration | Security | Testing | Ops |
+|------|--------|---------|----------|-------------|----------|---------|-----|
+| 2026-05-27 | 8 | 7 | 6 | 4 | 5 | 5 | 3 |
+
+See `docs/SYSTEM_DESIGN_REVIEW.md` §9 for actions to raise each score.
 
 ---
 

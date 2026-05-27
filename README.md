@@ -21,21 +21,27 @@ Open `http://localhost:3000/chat`.
 
 Copy `frontend/.env.example` to `frontend/.env.local`.
 
-The app can run without `OPENAI_API_KEY`; `/api/ai/parse` falls back to a deterministic parser for local development. Add `OPENAI_API_KEY` and `AI_MODEL` to use the server-side structured AI path.
-
-Supabase environment variables are prepared for the next persistence/auth phase:
+Required for the chat UI:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+RASA_URL=http://localhost:5005
 ```
+
+Sign in at `/login` (email + password). Transactions and chat history are stored in Supabase with RLS.
+
+Optional flags:
+
+- `ENABLE_DEV_USER_FALLBACK=true` + `FIN_GUARD_DEV_USER_ID` — Rasa `sender_id` for API testing without a browser session.
+- `ENABLE_LEGACY_AI_PARSE=true` — re-enables deprecated `/api/ai/parse` (OpenAI); production chat should use Rasa only.
+
+Apply database migrations from `supabase/migrations/` to your Supabase project before first use.
 
 ## Current Scope
 
-- Next.js App Router shell.
-- Chat-driven transaction entry.
-- Server-side parse route.
-- Confirmation/edit card.
-- Dashboard/report panel.
-- Local browser persistence until Supabase auth is connected.
-- Supabase initial schema migration in `supabase/migrations`.
+- Next.js App Router chat UI with Supabase Auth (SSR cookies).
+- `/api/chat` → Rasa CALM (no OpenAI fallback unless legacy flag is set).
+- Dashboard and chat history backed by Supabase Postgres (not `localStorage`).
+- Rasa action server persists transactions; frontend syncs from Supabase after each turn.
+- Supabase schema and balance RPC in `supabase/migrations/`.
