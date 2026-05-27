@@ -38,3 +38,17 @@ jobs:
       - run: uv run ruff check actions tests
       - run: uv run pyright
       - run: uv run pytest tests/ -q
+
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migration files
+        run: |
+          set -euo pipefail
+          count=$(find supabase/migrations -name '*.sql' | wc -l | tr -d ' ')
+          test "$count" -ge 3
+          for f in supabase/migrations/*.sql; do
+            test -s "$f"
+            echo "OK $(basename "$f")"
+          done

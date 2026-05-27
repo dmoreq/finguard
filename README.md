@@ -4,6 +4,8 @@ Hobby project: chat to track income and expenses. Stack is **Next.js + Rasa CALM
 
 See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the stack overview and **[docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md)** for the full improvement backlog.
 
+> **Note:** An earlier browser-only prototype may exist outside this repo; this monorepo is the maintained product (Next + Rasa + Supabase).
+
 ```text
 frontend/   Next.js app (UI + /api/chat → Rasa)
 backend/    Rasa CALM + action server (Docker)

@@ -118,7 +118,7 @@ flowchart TB
 | Supabase | `src/lib/supabase/{client,server,middleware}.ts` | SSR cookies, RLS client |
 | Data access | `src/lib/data/financial-data.ts`, `map-db-row.ts` | Load/persist txs & messages |
 | BFF | `src/app/api/chat/route.ts` | Auth + Rasa proxy |
-| Legacy (gated) | `src/app/api/ai/parse/route.ts`, `src/server/ai/*` | `ENABLE_LEGACY_AI_PARSE` only |
+| ~~Legacy parse~~ | ~~removed~~ | **Removed** — use `/api/chat` → Rasa only (see ARCHITECTURE.md) |
 | Reports | `src/features/reports/finance-calculations.ts` | Client-side aggregates |
 
 **Tests:** 3 Vitest files, 9 tests (`map-rasa-responses`, `map-db-row`, `resolve-user`).
