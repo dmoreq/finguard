@@ -11,6 +11,7 @@ from rasa_sdk.executor import CollectingDispatcher
 from actions.db.client import get_supabase
 from actions.db.queries import insert_transaction
 from actions.models.transaction import TransactionInsert
+from actions.utils.categories import normalize_category
 from actions.utils.dates import parse_relative_date
 from actions.utils.formatting import format_transaction_summary
 
@@ -36,8 +37,8 @@ class RecordTransactionSlots(BaseModel):
 
     @field_validator("category")
     @classmethod
-    def normalize_category(cls, v: str) -> str:
-        return v.strip().lower()
+    def normalize_category_field(cls, v: str) -> str:
+        return normalize_category(v)
 
 
 class ActionRecordTransaction(Action):

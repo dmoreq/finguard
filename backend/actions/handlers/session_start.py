@@ -8,6 +8,7 @@ from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
 from actions.db.client import get_supabase
+from actions.db.queries import get_latest_pending_transaction
 
 
 class ActionSessionStart(Action):
@@ -47,6 +48,7 @@ class ActionSessionStart(Action):
                 )
 
                 profile = response.data if response.data else {}
+                pending = await get_latest_pending_transaction(client, user_id)
         except Exception as e:
             logger.warning(
                 "session_start_profile_fetch_failed",
@@ -54,11 +56,34 @@ class ActionSessionStart(Action):
                 error=str(e),
             )
             profile = {}
+            pending = None
 
         # Extract profile fields with defaults
         currency = profile.get("currency", "USD")
         timezone = profile.get("timezone", "UTC")
         display_name = profile.get("display_name", user_id[:8])
+
+        events: list[dict] = [
+            SlotSet("user_id", user_id),
+            SlotSet("user_currency", currency),
+            SlotSet("user_timezone", timezone),
+            SlotSet("user_display_name", display_name),
+        ]
+
+        if pending:
+            logger.info(
+                "session_pending_transaction_synced",
+                user_id=user_id,
+                tx_id=pending.id,
+            )
+            events.extend(
+                [
+                    SlotSet("confirmation_pending", True),
+                    SlotSet("last_transaction_id", pending.id),
+                ]
+            )
+        else:
+            events.append(SlotSet("confirmation_pending", False))
 
         logger.info(
             "session_initialized",
@@ -66,12 +91,7 @@ class ActionSessionStart(Action):
             currency=currency,
             timezone=timezone,
             display_name=display_name,
+            has_pending=bool(pending),
         )
 
-        return [
-            SlotSet("user_id", user_id),
-            SlotSet("user_currency", currency),
-            SlotSet("user_timezone", timezone),
-            SlotSet("user_display_name", display_name),
-            SlotSet("confirmation_pending", False),
-        ]
+        return events

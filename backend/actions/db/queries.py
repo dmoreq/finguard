@@ -217,6 +217,27 @@ async def list_transactions(
     return [TransactionRow.model_validate(row) for row in response.data]
 
 
+async def get_latest_pending_transaction(
+    client: AsyncClient,
+    user_id: str,
+) -> TransactionRow | None:
+    """Return the most recent pending_confirmation transaction for a user."""
+    response = (
+        await client.table("transactions")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("status", "pending_confirmation")
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    if response.data:
+        return TransactionRow.model_validate(response.data[0])
+
+    return None
+
+
 async def get_transaction(
     client: AsyncClient,
     user_id: str,

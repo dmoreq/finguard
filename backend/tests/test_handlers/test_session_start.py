@@ -45,7 +45,13 @@ async def test_session_start_loads_profile_from_metadata(
     }
     mock_cm = _mock_profile_client(profile)
 
-    with patch("actions.handlers.session_start.get_supabase", return_value=mock_cm):
+    with (
+        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch(
+            "actions.handlers.session_start.get_latest_pending_transaction",
+            new=AsyncMock(return_value=None),
+        ),
+    ):
         events = await ActionSessionStart().run(mock_dispatcher, mock_tracker, {})
 
     assert events == [
@@ -66,7 +72,13 @@ async def test_session_start_falls_back_to_sender_id(
     mock_tracker.sender_id = "sender-123"
     mock_cm = _mock_profile_client({"display_name": "Bob", "currency": "USD", "timezone": "UTC"})
 
-    with patch("actions.handlers.session_start.get_supabase", return_value=mock_cm):
+    with (
+        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch(
+            "actions.handlers.session_start.get_latest_pending_transaction",
+            new=AsyncMock(return_value=None),
+        ),
+    ):
         events = await ActionSessionStart().run(mock_dispatcher, mock_tracker, {})
 
     assert events[0] == SlotSet("user_id", "sender-123")
@@ -104,3 +116,42 @@ async def test_session_start_profile_fetch_failure_uses_defaults(
         SlotSet("user_display_name", "user-99"),
         SlotSet("confirmation_pending", False),
     ]
+
+
+@pytest.mark.asyncio
+async def test_session_start_syncs_pending_transaction(
+    mock_dispatcher: MagicMock,
+    mock_tracker: MagicMock,
+) -> None:
+    from actions.models.transaction import TransactionRow
+
+    mock_tracker.latest_message = {"metadata": {"user_id": "user-pending"}}
+    profile = {"display_name": "Alice", "currency": "USD", "timezone": "UTC"}
+    mock_cm = _mock_profile_client(profile)
+    pending = TransactionRow(
+        id="tx-pending-1",
+        user_id="user-pending",
+        type="expense",
+        amount=10.0,
+        currency="USD",
+        category="food",
+        description=None,
+        transaction_date="2026-05-27",
+        status="pending_confirmation",
+        source="manual_chat",
+        ai_confidence=None,
+        created_at="2026-05-27T00:00:00Z",
+        updated_at="2026-05-27T00:00:00Z",
+    )
+
+    with (
+        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch(
+            "actions.handlers.session_start.get_latest_pending_transaction",
+            new=AsyncMock(return_value=pending),
+        ),
+    ):
+        events = await ActionSessionStart().run(mock_dispatcher, mock_tracker, {})
+
+    assert SlotSet("confirmation_pending", True) in events
+    assert SlotSet("last_transaction_id", "tx-pending-1") in events
