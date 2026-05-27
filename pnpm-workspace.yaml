@@ -1,0 +1,7 @@
+packages:
+  - "frontend"
+
+allowBuilds:
+  '@biomejs/biome': true
+  esbuild: set this to true or false
+  sharp: false

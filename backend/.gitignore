@@ -1,0 +1,12 @@
+# Local env (see root .gitignore for shared patterns)
+.env
+.env.local
+
+# Rasa trained models (regenerate via `rasa train`)
+rasa/models/
+.rasa_cache/
+*.pkl
+
+# Runtime logs
+logs/
+litellm/logs/
