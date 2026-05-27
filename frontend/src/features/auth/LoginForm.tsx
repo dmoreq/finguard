@@ -10,11 +10,13 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"sign_in" | "sign_up">("sign_in");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     try {
@@ -88,6 +90,31 @@ export function LoginForm() {
       >
         {mode === "sign_in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
       </button>
+
+      {mode === "sign_in" && (
+        <button
+          type="button"
+          className="button button-ghost login-toggle"
+          onClick={async () => {
+            if (!email.trim()) {
+              setError("Enter your email first.");
+              return;
+            }
+            setError(null);
+            setInfo(null);
+            const supabase = createClient();
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+              redirectTo: `${window.location.origin}/auth/callback`,
+            });
+            if (resetError) setError(resetError.message);
+            else setInfo("Check your email for a password reset link.");
+          }}
+        >
+          Forgot password?
+        </button>
+      )}
+
+      {info && <output className="login-info">{info}</output>}
     </form>
   );
 }

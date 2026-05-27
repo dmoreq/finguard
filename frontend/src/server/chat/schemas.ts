@@ -23,6 +23,7 @@ export type ChatApiMessage =
   | {
       type: "report";
       content: string;
+      reportData?: import("@/features/reports/finance-calculations").ReportData;
     }
   | {
       type: "error";

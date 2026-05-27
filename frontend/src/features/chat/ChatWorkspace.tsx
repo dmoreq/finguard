@@ -3,6 +3,7 @@
 import { useSession } from "@/features/auth/useSession";
 import { DashboardPanel } from "@/features/reports/DashboardPanel";
 import type { Transaction } from "@/features/transactions/types";
+import { categorySlug } from "@/lib/categories";
 import {
   clearAllTransactions,
   clearChatHistory,
@@ -40,6 +41,7 @@ export function ChatWorkspace() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [lastUserMessage, setLastUserMessage] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const transactionsRef = useRef(transactions);
 
@@ -109,6 +111,7 @@ export function ChatWorkspace() {
     const { showUserMessage = true } = options;
 
     if (showUserMessage) {
+      setLastUserMessage(text);
       await push({
         id: `u-${Date.now()}`,
         role: "user",
@@ -149,8 +152,9 @@ export function ChatWorkspace() {
       await refreshTransactions();
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Please try again.";
+      const errId = `err-${Date.now()}`;
       await push({
-        id: `err-${Date.now()}`,
+        id: errId,
         role: "assistant",
         type: "error",
         content: `Sorry, I had trouble with that. ${detail}`,
@@ -183,7 +187,7 @@ export function ChatWorkspace() {
     const parts = [
       "yes, confirm this transaction",
       `$${Number(transaction.amount).toFixed(2)}`,
-      transaction.category,
+      categorySlug(transaction.category),
     ];
     if (transaction.description) parts.push(transaction.description);
     parts.push(transaction.date || todayISO());
@@ -284,6 +288,16 @@ export function ChatWorkspace() {
           >
             Clear txs
           </button>
+          <a className="button button-ghost header-button" href="/settings">
+            Settings
+          </a>
+          <a
+            className="button button-ghost header-button"
+            href="/api/transactions/export"
+            download="finguard-transactions.csv"
+          >
+            Export CSV
+          </a>
           <button
             className="button button-ghost header-button"
             onClick={() => void handleSignOut()}
@@ -309,6 +323,11 @@ export function ChatWorkspace() {
       <main className="workspace">
         <section className="chat-pane">
           <div ref={chatRef} className="chat-scroll">
+            {messages.length <= 1 && confirmedCount === 0 && (
+              <output className="empty-hint">
+                No transactions yet. Try: &quot;I spent $12 on coffee today.&quot;
+              </output>
+            )}
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -316,6 +335,11 @@ export function ChatWorkspace() {
                 transactions={transactions}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
+                onRetry={
+                  message.type === "error" && lastUserMessage
+                    ? () => void sendToAssistant(lastUserMessage, { showUserMessage: false })
+                    : undefined
+                }
               />
             ))}
             {loading && <TypingIndicator />}

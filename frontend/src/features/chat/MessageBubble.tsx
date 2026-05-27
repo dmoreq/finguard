@@ -11,6 +11,7 @@ type Props = {
   transactions: Transaction[];
   onConfirm: (messageId: string, transaction: Transaction) => void;
   onCancel: (messageId: string) => void;
+  onRetry?: () => void;
 };
 
 function resolveTxStatus(message: ChatMessage, transactions: Transaction[]): TransactionStatus {
@@ -23,7 +24,7 @@ function resolveTxStatus(message: ChatMessage, transactions: Transaction[]): Tra
   return row?.status ?? message.txStatus ?? "pending_confirmation";
 }
 
-export function MessageBubble({ message, transactions, onConfirm, onCancel }: Props) {
+export function MessageBubble({ message, transactions, onConfirm, onCancel, onRetry }: Props) {
   const isUser = message.role === "user";
 
   if (message.type === "transaction" && message.transaction) {
@@ -49,6 +50,22 @@ export function MessageBubble({ message, transactions, onConfirm, onCancel }: Pr
         <AIBubble content={message.content} />
         <div className="card-offset">
           <ReportCard data={message.reportData} />
+        </div>
+      </div>
+    );
+  }
+
+  if (message.type === "error") {
+    return (
+      <div className="msg msg-row">
+        <FGAvatar />
+        <div className="bubble error-bubble">
+          {renderSimpleMarkdown(message.content)}
+          {onRetry && (
+            <button type="button" className="button button-ghost" onClick={onRetry}>
+              Retry
+            </button>
+          )}
         </div>
       </div>
     );

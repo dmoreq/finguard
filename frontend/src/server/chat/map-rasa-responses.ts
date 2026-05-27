@@ -1,3 +1,7 @@
+import {
+  reportDataFromBalancePayload,
+  reportDataFromSpendingPayload,
+} from "./map-rasa-report-data";
 import type { ChatApiMessage, ChatApiResponse, RasaWebhookPayload } from "./schemas";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -46,6 +50,26 @@ function mapTransactionPending(
   };
 }
 
+function mapReportMessage(custom: Record<string, unknown>, text: string): ChatApiMessage | null {
+  const customType = custom.type;
+  const reportText = typeof custom.text === "string" && custom.text ? custom.text : text;
+  if (!reportText) return null;
+
+  const data = custom.data;
+  const reportData =
+    customType === "balance"
+      ? reportDataFromBalancePayload(data)
+      : customType === "spending_report"
+        ? reportDataFromSpendingPayload(data)
+        : null;
+
+  return {
+    type: "report",
+    content: reportText,
+    ...(reportData ? { reportData } : {}),
+  };
+}
+
 export function mapRasaWebhookToChatResponse(items: RasaWebhookPayload[]): ChatApiResponse {
   const messages: ChatApiMessage[] = [];
 
@@ -66,9 +90,9 @@ export function mapRasaWebhookToChatResponse(items: RasaWebhookPayload[]): ChatA
         }
       }
       if (customType === "spending_report" || customType === "balance") {
-        const reportText = typeof custom.text === "string" && custom.text ? custom.text : text;
-        if (reportText) {
-          messages.push({ type: "report", content: reportText });
+        const mapped = mapReportMessage(custom, text);
+        if (mapped) {
+          messages.push(mapped);
           continue;
         }
       }

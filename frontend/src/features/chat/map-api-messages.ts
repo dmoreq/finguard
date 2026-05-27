@@ -38,7 +38,7 @@ export function mapApiMessagesToChat(
         role: "assistant",
         type: "report",
         content: item.content,
-        reportData: computeReportData(transactions),
+        reportData: item.reportData ?? computeReportData(transactions),
         timestamp,
       };
     }

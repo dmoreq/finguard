@@ -1,0 +1,16 @@
+[
+  {
+    "json_message": {
+      "type": "balance",
+      "text": "**Balance for this month:**\nIncome: $3,200\nExpenses: $450\nNet: $2,750",
+      "data": {
+        "period": "this_month",
+        "income": 3200,
+        "expenses": 450,
+        "net": 2750,
+        "currency": "USD",
+        "sentiment": "positive"
+      }
+    }
+  }
+]

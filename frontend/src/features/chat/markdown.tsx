@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+/** Escape text before injecting into React children (FE-6). */
+function escapeText(text: string): string {
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
 export function renderSimpleMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const lines = text.split("\n");
@@ -32,17 +37,17 @@ function renderInline(text: string) {
 
   return parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
+      return <strong key={index}>{escapeText(part.slice(2, -2))}</strong>;
     }
 
     if (part.startsWith("*") && part.endsWith("*")) {
-      return <em key={index}>{part.slice(1, -1)}</em>;
+      return <em key={index}>{escapeText(part.slice(1, -1))}</em>;
     }
 
     if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={index}>{part.slice(1, -1)}</code>;
+      return <code key={index}>{escapeText(part.slice(1, -1))}</code>;
     }
 
-    return part;
+    return escapeText(part);
   });
 }

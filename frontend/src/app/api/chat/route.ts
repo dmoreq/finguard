@@ -1,4 +1,5 @@
 import { mapRasaWebhookToChatResponse } from "@/server/chat/map-rasa-responses";
+import { checkChatRateLimit } from "@/server/chat/rate-limit";
 import { getRasaUrl, resolveChatUserId } from "@/server/chat/resolve-user";
 import { type RasaWebhookPayload, parseChatRequest } from "@/server/chat/schemas";
 import { NextResponse } from "next/server";
@@ -18,6 +19,19 @@ export async function POST(request: Request) {
           },
         },
         { status: 401 },
+      );
+    }
+
+    const rate = checkChatRateLimit(userId);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: `Too many messages. Try again in ${rate.retryAfterSec ?? 60} seconds.`,
+          },
+        },
+        { status: 429 },
       );
     }
 
@@ -50,7 +64,8 @@ export async function POST(request: Request) {
         {
           error: {
             code: "RASA_UNAVAILABLE",
-            message: "Chat service is temporarily unavailable.",
+            message:
+              "The assistant is temporarily unavailable. Start the Rasa stack (see docs/runbooks/local-development.md) and try again.",
           },
         },
         { status: 503 },

@@ -1,0 +1,17 @@
+[
+  {
+    "json_message": {
+      "type": "spending_report",
+      "text": "**Spending for this month:**\n  • Food: $120 (60%)\n\n**Total: $200**",
+      "data": {
+        "period": "this_month",
+        "total": 200,
+        "currency": "USD",
+        "by_category": [
+          { "category": "food", "total": 120, "count": 3 },
+          { "category": "transport", "total": 80, "count": 2 }
+        ]
+      }
+    }
+  }
+]

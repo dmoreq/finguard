@@ -5,6 +5,7 @@ import type {
   TransactionStatus,
   TransactionType,
 } from "@/features/transactions/types";
+import { categoryDisplay } from "@/lib/categories";
 
 export type TransactionRow = {
   id: string;
@@ -33,19 +34,12 @@ export type ChatMessageRow = {
   created_at: string;
 };
 
-function titleCaseCategory(category: string): string {
-  return category
-    .split(/\s+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 export function mapTransactionRow(row: TransactionRow): Transaction {
   return {
     id: row.id,
     type: row.type,
     amount: Number(row.amount),
-    category: titleCaseCategory(row.category),
+    category: categoryDisplay(row.category),
     description: row.description,
     date: row.transaction_date,
     status: row.status,

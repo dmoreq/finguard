@@ -17,13 +17,13 @@ importers:
         specifier: ^2.106.2
         version: 2.106.2
       next:
-        specifier: latest
+        specifier: 16.2.6
         version: 16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react:
-        specifier: latest
+        specifier: 19.2.6
         version: 19.2.6
       react-dom:
-        specifier: latest
+        specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
     devDependencies:
       '@biomejs/biome':
