@@ -1,19 +1,22 @@
 "use client";
 
+import { useSession } from "@/features/auth/useSession";
 import { DashboardPanel } from "@/features/reports/DashboardPanel";
 import type { Transaction } from "@/features/transactions/types";
+import {
+  clearUserFinancialData,
+  fetchChatMessages,
+  fetchUserTransactions,
+  persistChatMessage,
+  updateChatMessageTxStatus,
+} from "@/lib/data/financial-data";
 import { todayISO } from "@/lib/format";
 import type { ChatApiResponse } from "@/server/chat/schemas";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InputBar } from "./InputBar";
 import { MessageBubble, TypingIndicator } from "./MessageBubble";
 import { mapApiMessagesToChat } from "./map-api-messages";
 import type { ChatMessage } from "./types";
-
-const storageKeys = {
-  messages: "fg_next_msgs",
-  transactions: "fg_next_txs",
-};
 
 const welcomeMessage: ChatMessage = {
   id: "welcome",
@@ -29,10 +32,13 @@ type SendOptions = {
 };
 
 export function ChatWorkspace() {
+  const { userId, loading: sessionLoading } = useSession();
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const transactionsRef = useRef(transactions);
 
@@ -45,43 +51,58 @@ export function ChatWorkspace() {
     transactionsRef.current = transactions;
   }, [transactions]);
 
-  useEffect(() => {
-    try {
-      const storedMessages = JSON.parse(localStorage.getItem(storageKeys.messages) || "null") as
-        | ChatMessage[]
-        | null;
-      const storedTransactions = JSON.parse(
-        localStorage.getItem(storageKeys.transactions) || "[]",
-      ) as Transaction[];
-      if (storedMessages?.length) setMessages(storedMessages);
-      if (storedTransactions?.length) setTransactions(storedTransactions);
-    } catch {
-      setMessages([welcomeMessage]);
-      setTransactions([]);
-    }
+  const refreshTransactions = useCallback(async () => {
+    const rows = await fetchUserTransactions();
+    setTransactions(rows);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(storageKeys.messages, JSON.stringify(messages.slice(-80)));
-  }, [messages]);
+  const loadInitialData = useCallback(async () => {
+    if (!userId) return;
+    setDataLoading(true);
+    setDataError(null);
+    try {
+      const [storedMessages, storedTransactions] = await Promise.all([
+        fetchChatMessages(),
+        fetchUserTransactions(),
+      ]);
+      setTransactions(storedTransactions);
+      if (storedMessages.length > 0) {
+        setMessages(storedMessages);
+      } else {
+        setMessages([welcomeMessage]);
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Could not load your data.";
+      setDataError(detail);
+    } finally {
+      setDataLoading(false);
+    }
+  }, [userId]);
 
   useEffect(() => {
-    localStorage.setItem(storageKeys.transactions, JSON.stringify(transactions));
-  }, [transactions]);
+    if (!userId) return;
+    void loadInitialData();
+  }, [userId, loadInitialData]);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   });
 
-  const push = (message: ChatMessage) => {
+  const push = async (message: ChatMessage) => {
     setMessages((current) => [...current, message]);
+    if (!userId || message.id === "welcome") return;
+    try {
+      await persistChatMessage(message, userId);
+    } catch {
+      // Chat still works; persistence failure is non-fatal for the turn
+    }
   };
 
   const sendToAssistant = async (text: string, options: SendOptions = {}) => {
     const { showUserMessage = true } = options;
 
     if (showUserMessage) {
-      push({
+      await push({
         id: `u-${Date.now()}`,
         role: "user",
         type: "text",
@@ -115,11 +136,13 @@ export function ChatWorkspace() {
       );
 
       for (const message of assistantMessages) {
-        push(message);
+        await push(message);
       }
+
+      await refreshTransactions();
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Please try again.";
-      push({
+      await push({
         id: `err-${Date.now()}`,
         role: "assistant",
         type: "error",
@@ -142,6 +165,14 @@ export function ChatWorkspace() {
       ),
     );
 
+    if (messageId !== "welcome") {
+      try {
+        await updateChatMessageTxStatus(messageId, "confirmed");
+      } catch {
+        // Rasa is source of truth for transaction status
+      }
+    }
+
     const parts = [
       "yes, confirm this transaction",
       `$${Number(transaction.amount).toFixed(2)}`,
@@ -151,29 +182,6 @@ export function ChatWorkspace() {
     parts.push(transaction.date || todayISO());
 
     await sendToAssistant(parts.join(", "), { showUserMessage: false });
-
-    setTransactions((current) => {
-      const exists = current.some((item) => item.id === transaction.id);
-      if (exists) {
-        return current.map((item) =>
-          item.id === transaction.id
-            ? {
-                ...transaction,
-                status: "confirmed",
-                confirmedAt: new Date().toISOString(),
-              }
-            : item,
-        );
-      }
-      return [
-        ...current,
-        {
-          ...transaction,
-          status: "confirmed",
-          confirmedAt: new Date().toISOString(),
-        },
-      ];
-    });
   };
 
   const handleCancel = async (messageId: string) => {
@@ -182,16 +190,53 @@ export function ChatWorkspace() {
         message.id === messageId ? { ...message, txStatus: "discarded" } : message,
       ),
     );
+
+    if (messageId !== "welcome") {
+      try {
+        await updateChatMessageTxStatus(messageId, "discarded");
+      } catch {
+        // Non-fatal
+      }
+    }
+
     await sendToAssistant("discard that transaction", { showUserMessage: false });
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!window.confirm("Clear all messages and transactions? This cannot be undone.")) return;
-    setMessages([welcomeMessage]);
-    setTransactions([]);
-    localStorage.removeItem(storageKeys.messages);
-    localStorage.removeItem(storageKeys.transactions);
+    try {
+      await clearUserFinancialData();
+      setMessages([welcomeMessage]);
+      setTransactions([]);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Could not reset data.";
+      window.alert(detail);
+    }
   };
+
+  const handleSignOut = async () => {
+    const { createClient } = await import("@/lib/supabase/client");
+    await createClient().auth.signOut();
+    window.location.href = "/login";
+  };
+
+  if (sessionLoading || dataLoading) {
+    return (
+      <div className="app-root app-loading">
+        <p>Loading your workspace…</p>
+      </div>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <div className="app-root app-loading">
+        <p>
+          <a href="/login">Sign in</a> to use Finguard.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-root">
@@ -211,11 +256,30 @@ export function ChatWorkspace() {
           >
             {sidebarOpen ? "Hide Overview" : "Overview"}
           </button>
-          <button className="button button-ghost header-button" onClick={handleReset}>
+          <button className="button button-ghost header-button" onClick={() => void handleReset()}>
             Reset
+          </button>
+          <button
+            className="button button-ghost header-button"
+            onClick={() => void handleSignOut()}
+          >
+            Sign out
           </button>
         </div>
       </header>
+
+      {dataError && (
+        <p className="data-error" role="alert">
+          {dataError}{" "}
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={() => void loadInitialData()}
+          >
+            Retry
+          </button>
+        </p>
+      )}
 
       <main className="workspace">
         <section className="chat-pane">

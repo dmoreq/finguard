@@ -1,3 +1,4 @@
+import { isLegacyAiParseEnabled } from "@/lib/env";
 import { todayISO } from "@/lib/format";
 import { parseTransaction } from "@/server/ai/parse-transaction";
 import { parseRequest } from "@/server/ai/schemas";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     const { message } = parseChatRequest(json);
-    const userId = resolveChatUserId();
+    const userId = await resolveChatUserId();
 
     if (!userId) {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
           error: {
             code: "UNAUTHORIZED",
             message:
-              "Chat requires a user id. Set FIN_GUARD_DEV_USER_ID in .env.local for local development.",
+              "Sign in to use chat, or enable ENABLE_DEV_USER_FALLBACK for local development.",
           },
         },
         { status: 401 },
@@ -30,7 +31,18 @@ export async function POST(request: Request) {
 
     const rasaUrl = getRasaUrl();
     if (!rasaUrl) {
-      return fallbackParse(message);
+      if (isLegacyAiParseEnabled()) {
+        return legacyParseFallback(message);
+      }
+      return NextResponse.json(
+        {
+          error: {
+            code: "RASA_NOT_CONFIGURED",
+            message: "Set RASA_URL to the Rasa REST webhook base URL.",
+          },
+        },
+        { status: 503 },
+      );
     }
 
     const rasaResponse = await fetch(`${rasaUrl}/webhooks/rest/webhook`, {
@@ -74,7 +86,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function fallbackParse(message: string) {
+async function legacyParseFallback(message: string) {
   try {
     const input = parseRequest({
       message,
@@ -88,7 +100,7 @@ async function fallbackParse(message: string) {
       {
         error: {
           code: "PARSE_UNAVAILABLE",
-          message: "Set RASA_URL or OPENAI_API_KEY to enable chat.",
+          message: "Legacy parse failed. Configure RASA_URL for production chat.",
         },
       },
       { status: 503 },

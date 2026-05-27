@@ -4,8 +4,12 @@ export function hasSupabaseConfig() {
   );
 }
 
-export function hasAiConfig() {
-  return Boolean(process.env.OPENAI_API_KEY);
+export function isLegacyAiParseEnabled() {
+  return process.env.ENABLE_LEGACY_AI_PARSE === "true";
+}
+
+export function isDevUserFallbackEnabled() {
+  return process.env.ENABLE_DEV_USER_FALLBACK === "true";
 }
 
 export function hasRasaConfig() {
@@ -13,5 +17,5 @@ export function hasRasaConfig() {
 }
 
 export function hasChatConfig() {
-  return hasRasaConfig() || hasAiConfig();
+  return hasRasaConfig() && (hasSupabaseConfig() || isDevUserFallbackEnabled());
 }
