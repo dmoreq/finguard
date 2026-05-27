@@ -1,7 +1,10 @@
 # Finguard — System Design Review & Improvement Plan
 
+> **Hobby project?** Read **[ARCHITECTURE.md](./ARCHITECTURE.md)** (stack) and **[IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md)** (what to do next).
+> This document is a detailed review for later hardening; you do not need it to build locally.
+
 **Date:** 2026-05-27
-**Status:** Living document
+**Status:** Living document (optional / scale-up reference)
 **Audience:** Engineers and agents working on Finguard
 **Scope:** Full monorepo (`frontend/`, `backend/`, `supabase/`, `docs/`)
 

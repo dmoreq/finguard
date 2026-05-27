@@ -13,7 +13,9 @@
 Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, and local action server**. Phase 3 started with **balance RPC migration** and **`update_transaction` handler**.
 
 **Key Planning Docs:**
-- `docs/SYSTEM_DESIGN_REVIEW.md` — Architecture review, threat model, scorecards, improvement actions
+- `docs/ARCHITECTURE.md` — Short stack overview (start here)
+- `docs/IMPROVEMENT_PLAN.md` — Scorecard actions, cleanup, phases (main backlog)
+- `docs/SYSTEM_DESIGN_REVIEW.md` — Detailed review when scaling up
 - `docs/rasa-calm-backend-plan.md` — Full architecture and configuration reference
 - `docs/PHASE_1_SUMMARY.md` — What Phase 1 built (35 files)
 - This file — Progress and day-to-day status
@@ -29,7 +31,8 @@ Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, a
 | **3 — Database & Gaps** | RPC migration, update handler | 🟡 In progress |
 | **4 — Backend Tests** | Handler unit tests with mocked Supabase | ✅ Complete |
 | **5 — Frontend Integration** | `/api/chat` bridge, ChatWorkspace | ✅ Complete |
-| **5b — Data & Auth consolidation** | Supabase Auth, DB SoT, legacy parse gated | ✅ Complete |
+| **5b — Data & Auth consolidation** | Supabase Auth, DB SoT, legacy parse removed | ✅ Complete |
+| **5c — Simplify stack** | ARCHITECTURE.md, legacy AI removed | ✅ Complete |
 | **6 — Hardening & Deploy** | Rate limits, Redis, deploy | ⭕ Pending |
 
 ---
@@ -39,7 +42,7 @@ Phase 1 delivered a **full scaffold**. Phase 2 verified **uv lockfile, pytest, a
 - [x] `@supabase/ssr` + cookie session middleware
 - [x] `/login` + `/auth/callback`
 - [x] Chat loads transactions + messages from Supabase (RLS)
-- [x] `/api/chat` requires auth; Rasa only (legacy parse behind `ENABLE_LEGACY_AI_PARSE`)
+- [x] `/api/chat` requires auth; Rasa only (legacy OpenAI parse removed)
 - [x] Removed `localStorage` as source of truth
 
 ---

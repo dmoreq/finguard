@@ -1,27 +1,33 @@
 # Finguard
 
-Finguard is organized as a multi-package codebase. The Next.js app lives in `frontend/`; a backend package can be added beside it.
+Hobby project: chat to track income and expenses. Stack is **Next.js + Rasa CALM + Supabase**.
+
+See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the stack overview and **[docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md)** for the full improvement backlog.
 
 ```text
-frontend/   Next.js App Router application
-supabase/   Database migrations
-docs/       Architecture and implementation notes
+frontend/   Next.js app (UI + /api/chat → Rasa)
+backend/    Rasa CALM + action server (Docker)
+supabase/   Postgres migrations
 ```
 
-## Local Development
+## Quick start
 
 ```bash
+# Frontend
+cp frontend/.env.example frontend/.env.local   # fill Supabase + RASA_URL
 pnpm --dir frontend install
 pnpm frontend:dev
+
+# Backend (separate terminal)
+cp backend/.env.example backend/.env           # fill keys
+cd backend && docker compose up
 ```
 
-Open `http://localhost:3000/chat`.
+Open http://localhost:3000 → sign in → `/chat`.
 
-## Environment
+Apply SQL in `supabase/migrations/` to your Supabase project before first use.
 
-Copy `frontend/.env.example` to `frontend/.env.local`.
-
-Required for the chat UI:
+## Env (frontend)
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -29,19 +35,4 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 RASA_URL=http://localhost:5005
 ```
 
-Sign in at `/login` (email + password). Transactions and chat history are stored in Supabase with RLS.
-
-Optional flags:
-
-- `ENABLE_DEV_USER_FALLBACK=true` + `FIN_GUARD_DEV_USER_ID` — Rasa `sender_id` for API testing without a browser session.
-- `ENABLE_LEGACY_AI_PARSE=true` — re-enables deprecated `/api/ai/parse` (OpenAI); production chat should use Rasa only.
-
-Apply database migrations from `supabase/migrations/` to your Supabase project before first use.
-
-## Current Scope
-
-- Next.js App Router chat UI with Supabase Auth (SSR cookies).
-- `/api/chat` → Rasa CALM (no OpenAI fallback unless legacy flag is set).
-- Dashboard and chat history backed by Supabase Postgres (not `localStorage`).
-- Rasa action server persists transactions; frontend syncs from Supabase after each turn.
-- Supabase schema and balance RPC in `supabase/migrations/`.
+Backend needs Supabase **service role** and LLM keys for Docker — see `backend/.env.example`.
