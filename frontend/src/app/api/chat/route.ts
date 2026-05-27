@@ -1,11 +1,4 @@
-import { isLegacyAiParseEnabled } from "@/lib/env";
-import { todayISO } from "@/lib/format";
-import { parseTransaction } from "@/server/ai/parse-transaction";
-import { parseRequest } from "@/server/ai/schemas";
-import {
-  mapParseResultToChatResponse,
-  mapRasaWebhookToChatResponse,
-} from "@/server/chat/map-rasa-responses";
+import { mapRasaWebhookToChatResponse } from "@/server/chat/map-rasa-responses";
 import { getRasaUrl, resolveChatUserId } from "@/server/chat/resolve-user";
 import { type RasaWebhookPayload, parseChatRequest } from "@/server/chat/schemas";
 import { NextResponse } from "next/server";
@@ -21,8 +14,7 @@ export async function POST(request: Request) {
         {
           error: {
             code: "UNAUTHORIZED",
-            message:
-              "Sign in to use chat, or enable ENABLE_DEV_USER_FALLBACK for local development.",
+            message: "Sign in at /login to use chat.",
           },
         },
         { status: 401 },
@@ -31,14 +23,11 @@ export async function POST(request: Request) {
 
     const rasaUrl = getRasaUrl();
     if (!rasaUrl) {
-      if (isLegacyAiParseEnabled()) {
-        return legacyParseFallback(message);
-      }
       return NextResponse.json(
         {
           error: {
             code: "RASA_NOT_CONFIGURED",
-            message: "Set RASA_URL to the Rasa REST webhook base URL.",
+            message: "Set RASA_URL in .env.local (e.g. http://localhost:5005).",
           },
         },
         { status: 503 },
@@ -82,28 +71,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Unable to process message." } },
       { status: 500 },
-    );
-  }
-}
-
-async function legacyParseFallback(message: string) {
-  try {
-    const input = parseRequest({
-      message,
-      today: todayISO(),
-      transactions: [],
-    });
-    const result = await parseTransaction(input);
-    return NextResponse.json(mapParseResultToChatResponse(result));
-  } catch {
-    return NextResponse.json(
-      {
-        error: {
-          code: "PARSE_UNAVAILABLE",
-          message: "Legacy parse failed. Configure RASA_URL for production chat.",
-        },
-      },
-      { status: 503 },
     );
   }
 }

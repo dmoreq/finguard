@@ -1,29 +1,16 @@
-import { hasSupabaseConfig, isDevUserFallbackEnabled } from "@/lib/env";
+import { hasSupabaseConfig } from "@/lib/env";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-/**
- * Resolves the user id for Rasa sender_id + metadata.
- * Prefers Supabase Auth session; optional dev uuid when ENABLE_DEV_USER_FALLBACK=true.
- */
+/** Authenticated user id for Rasa sender_id and metadata. */
 export async function resolveChatUserId(): Promise<string | null> {
-  if (hasSupabaseConfig()) {
-    try {
-      const supabase = await createServerSupabaseClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user?.id) return user.id;
-    } catch {
-      // Misconfigured env — fall through to dev fallback if allowed
-    }
-  }
+  if (!hasSupabaseConfig()) return null;
 
-  if (isDevUserFallbackEnabled()) {
-    const devUser = process.env.FIN_GUARD_DEV_USER_ID?.trim();
-    if (devUser) return devUser;
-  }
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return null;
+  return user?.id ?? null;
 }
 
 export function getRasaUrl(): string | null {

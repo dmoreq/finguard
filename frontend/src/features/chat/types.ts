@@ -11,9 +11,3 @@ export type ChatMessage = {
   txStatus?: "pending_confirmation" | "confirmed" | "discarded";
   timestamp: string;
 };
-
-export type AiParseResult = {
-  intent: "transaction" | "report" | "conversation";
-  message: string;
-  transaction: Transaction | null;
-};

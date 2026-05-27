@@ -1,4 +1,3 @@
-import type { AiParseResult } from "@/server/ai/schemas";
 import type { ChatApiMessage, ChatApiResponse, RasaWebhookPayload } from "./schemas";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -95,46 +94,4 @@ export function mapRasaWebhookToChatResponse(items: RasaWebhookPayload[]): ChatA
   }
 
   return { messages };
-}
-
-export function mapParseResultToChatResponse(result: AiParseResult): ChatApiResponse {
-  if (result.intent === "transaction" && result.transaction) {
-    return {
-      messages: [
-        {
-          type: "transaction",
-          content: result.message || "I detected a transaction. Confirm the details below.",
-          transaction: {
-            id: result.transaction.id,
-            type: result.transaction.type,
-            amount: result.transaction.amount,
-            category: result.transaction.category,
-            description: result.transaction.description,
-            date: result.transaction.date,
-            status: "pending_confirmation",
-          },
-        },
-      ],
-    };
-  }
-
-  if (result.intent === "report") {
-    return {
-      messages: [
-        {
-          type: "report",
-          content: result.message || "Here's your financial snapshot.",
-        },
-      ],
-    };
-  }
-
-  return {
-    messages: [
-      {
-        type: "text",
-        content: result.message || "I'm here to help you track your finances.",
-      },
-    ],
-  };
 }
