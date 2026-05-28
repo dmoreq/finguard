@@ -1,15 +1,11 @@
 [project]
 name = "finguard-backend"
 version = "0.1.0"
-description = "Finguard CALM action server — financial AI backend"
+description = "Finguard chat backend and SQLite data API"
 requires-python = ">=3.12"
 authors = [{ name = "Finguard", email = "dev@finguard.local" }]
 
 dependencies = [
-    # Action server only — Rasa Pro runs in Docker (rasa/rasa-pro) or mock-rasa.py locally
-    "rasa-sdk>=3.9,<4",
-
-    # Action server
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.10",
@@ -42,8 +38,6 @@ dev = [
     "pytest-httpx>=0.35",
     "ruff>=0.8",
     "pyright>=1.1",
-    "litellm>=1.55",
-    "backoff>=2.2",
 ]
 
 [tool.ruff]

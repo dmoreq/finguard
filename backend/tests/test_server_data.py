@@ -11,7 +11,7 @@ from actions.server import app
 
 
 @pytest.fixture
-def client(db_path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+def client(db_path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("FINGUARD_DB_PATH", str(db_path))
     with TestClient(app) as test_client:
         yield test_client
@@ -80,4 +80,4 @@ def test_data_profile_get_and_patch(client: TestClient) -> None:
 def test_health_endpoint(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["service"] == "action-server"
+    assert response.json()["service"] == "finguard-backend"

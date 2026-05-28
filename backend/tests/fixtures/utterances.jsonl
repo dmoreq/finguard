@@ -1,0 +1,26 @@
+{"intent": "log_expense", "text": "I spent $5 on coffee"}
+{"intent": "log_expense", "text": "paid $12 for lunch"}
+{"intent": "log_expense", "text": "groceries 50k"}
+{"intent": "log_expense", "text": "bought groceries for $80"}
+{"intent": "log_expense", "text": "spent 45 on transport"}
+{"intent": "log_income", "text": "got paid $2000"}
+{"intent": "log_income", "text": "freelance payment 500 dollars"}
+{"intent": "log_income", "text": "received a bonus of $300"}
+{"intent": "check_balance", "text": "what's my balance?"}
+{"intent": "check_balance", "text": "how much did I earn this month?"}
+{"intent": "check_balance", "text": "show income vs expenses"}
+{"intent": "analyze_spending", "text": "how much did I spend last month?"}
+{"intent": "analyze_spending", "text": "spending breakdown by category"}
+{"intent": "analyze_spending", "text": "show my grocery spending"}
+{"intent": "list_transactions", "text": "show recent transactions"}
+{"intent": "list_transactions", "text": "what did I record?"}
+{"intent": "manage_confirm", "text": "yes", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "confirm", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "discard", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "cancel", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "change amount to 50", "confirmation_pending": true}
+{"intent": "chitchat", "text": "hello"}
+{"intent": "chitchat", "text": "thanks"}
+{"intent": "log_expense", "text": "coffee 4.50 dining"}
+{"intent": "check_balance", "text": "balance this month"}
+{"intent": "analyze_spending", "text": "expenses last 7 days"}
