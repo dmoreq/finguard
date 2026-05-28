@@ -7,33 +7,57 @@ routes:
       - bought groceries for $80
       - spent 45 on transport
       - coffee 4.50 dining
-      - I paid twenty dollars for dinner
       - chi tieu 50k an trua
+      - Chi tiêu 80k cà phê sáng nay
+      - Mua cà phê 35k
+      - Trả 200k tiền điện
+      - Hôm nay tiêu 80k Grab
+      - tiêu 50 nghìn ăn trưa
+      - mua đồ chợ 150k
   - name: log_income
     utterances:
       - got paid $2000
       - freelance payment 500 dollars
       - received a bonus of $300
       - salary deposit this month
+      - Nhận lương 15 triệu
+      - Freelance 3 triệu
+      - Thưởng 2 triệu
+      - tiền lương tháng này
   - name: check_balance
     utterances:
       - what's my balance?
       - how much did I earn this month?
       - show income vs expenses
       - balance this month
+      - Số dư tháng này
+      - Thu chi tháng này thế nào
+      - Còn bao nhiêu tiền
+      - xem số dư
   - name: analyze_spending
     utterances:
       - how much did I spend last month?
       - spending breakdown by category
       - show my grocery spending
       - expenses last 7 days
+      - Tháng nay chi bao nhiêu
+      - Chi tiêu theo danh mục
+      - Tuần này tiêu gì nhiều nhất
+      - chi tiêu ăn uống tăng so với tháng trước
+      - so sánh chi tiêu tháng này
   - name: list_transactions
     utterances:
       - show recent transactions
       - what did I record?
       - transaction history please
+      - Xem giao dịch gần đây
+      - Lịch sử chi tiêu
+      - danh sách giao dịch
   - name: chitchat
     utterances:
       - hello
       - thanks
       - help me
+      - xin chào
+      - cảm ơn
+      - giúp tôi

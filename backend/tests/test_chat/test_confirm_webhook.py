@@ -37,7 +37,7 @@ async def test_record_then_confirm(db_path) -> None:
             "metadata": {"user_id": "user-a"},
         }
     )
-    assert "Saved" in second[0].get("text", "")
+    assert "Saved" in second[0].get("text", "") or "Đã lưu" in second[0].get("text", "")
 
     async with get_db() as conn:
         row = await get_transaction(conn, "user-a", tx_id)

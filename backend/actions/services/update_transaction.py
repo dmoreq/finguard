@@ -4,19 +4,21 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from actions.chat.respond.payloads import text_message
+from actions.chat.respond.payloads import custom_message, text_message
 from actions.db.client import get_db
 from actions.db.queries import get_transaction
 from actions.db.queries import update_transaction as db_update
 from actions.services.types import ServiceResult, SessionUpdates
 from actions.utils.formatting import format_transaction_summary
+from actions.utils.i18n import t
 
 
 class UpdateInput(BaseModel):
     user_id: str
     transaction_id: str
-    user_currency: str = "USD"
+    user_currency: str = "VND"
     user_timezone: str = "UTC"
+    user_locale: str = "vi"
     confirm: bool = True
     amount: float | None = None
     category: str | None = None
@@ -25,6 +27,7 @@ class UpdateInput(BaseModel):
 
 
 async def update_transaction(input: UpdateInput) -> ServiceResult:
+    locale = input.user_locale
     updates: dict[str, object] = {}
     if input.confirm:
         updates["status"] = "confirmed"
@@ -38,22 +41,20 @@ async def update_transaction(input: UpdateInput) -> ServiceResult:
         updates["transaction_date"] = input.transaction_date
 
     if not updates:
-        return ServiceResult(messages=[text_message("Nothing to update.")])
+        return ServiceResult(messages=[text_message(t("nothing_to_update", locale))])
 
     try:
         async with get_db() as conn:
             existing = await get_transaction(conn, input.user_id, input.transaction_id)
             if not existing:
-                return ServiceResult(messages=[text_message("Couldn't find that transaction.")])
+                return ServiceResult(messages=[text_message(t("not_found", locale))])
 
             if updates.get("status") == "confirmed":
                 if existing.status == "confirmed":
                     row = existing
                 elif existing.status != "pending_confirmation":
                     return ServiceResult(
-                        messages=[
-                            text_message("That transaction is no longer waiting to confirm.")
-                        ],
+                        messages=[text_message(t("no_longer_pending", locale))],
                         session=SessionUpdates(
                             confirmation_pending=False,
                             last_transaction_id=None,
@@ -65,10 +66,10 @@ async def update_transaction(input: UpdateInput) -> ServiceResult:
             else:
                 row = await db_update(conn, input.user_id, input.transaction_id, updates)
     except Exception:
-        return ServiceResult(messages=[text_message("Sorry, I couldn't update that transaction.")])
+        return ServiceResult(messages=[text_message(t("update_error", locale))])
 
     if not row:
-        return ServiceResult(messages=[text_message("Couldn't find that transaction.")])
+        return ServiceResult(messages=[text_message(t("not_found", locale))])
 
     if input.confirm:
         summary = format_transaction_summary(
@@ -79,7 +80,7 @@ async def update_transaction(input: UpdateInput) -> ServiceResult:
             input.user_timezone,
         )
         return ServiceResult(
-            messages=[text_message(f"Saved — {summary}. ✓")],
+            messages=[text_message(t("confirm_saved", locale, summary=summary))],
             session=SessionUpdates(
                 confirmation_pending=False,
                 last_transaction_id=None,
@@ -106,9 +107,8 @@ async def update_transaction(input: UpdateInput) -> ServiceResult:
             "description": row.description,
             "date": row.transaction_date,
         },
-        "text": f"Updated — {amount_fmt}. Confirm or edit?",
+        "text": t("update_pending", locale, summary=amount_fmt),
     }
-    from actions.chat.respond.payloads import custom_message
 
     return ServiceResult(
         messages=[custom_message(payload)],

@@ -15,6 +15,7 @@ from actions.services.types import ServiceResult, SessionUpdates
 from actions.utils.categories import normalize_category
 from actions.utils.dates import parse_relative_date
 from actions.utils.formatting import format_transaction_summary
+from actions.utils.i18n import t
 
 
 class RecordInput(BaseModel):
@@ -24,8 +25,9 @@ class RecordInput(BaseModel):
     description: str | None = None
     transaction_date: str | None = None
     transaction_type: Literal["income", "expense"] = "expense"
-    user_currency: str = "USD"
+    user_currency: str = "VND"
     user_timezone: str = "UTC"
+    user_locale: str = "vi"
     ai_confidence: float | None = None
 
     @field_validator("amount")
@@ -66,9 +68,7 @@ async def record_transaction(input: RecordInput) -> ServiceResult:
             result = await insert_transaction(conn, tx)
     except Exception as e:
         logger.exception("transaction_insert_failed", user_id=input.user_id, error=str(e))
-        return ServiceResult(
-            messages=[{"text": "Sorry, I couldn't save that transaction. Please try again."}]
-        )
+        return ServiceResult(messages=[{"text": t("record_error", input.user_locale)}])
 
     amount_fmt = format_transaction_summary(
         input.amount,
@@ -89,7 +89,7 @@ async def record_transaction(input: RecordInput) -> ServiceResult:
             "description": input.description,
             "date": resolved_date.to_date_string(),
         },
-        "text": f"Got it — {amount_fmt}. Confirm or edit?",
+        "text": t("record_pending", input.user_locale, summary=amount_fmt),
     }
 
     return ServiceResult(

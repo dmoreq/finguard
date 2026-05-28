@@ -15,7 +15,17 @@ async def handle_webhook(payload: dict[str, Any]) -> list[dict[str, Any]]:
     user_id = str(metadata.get("user_id") or sender)
 
     if not message:
-        return [{"text": "Please send a message."}]
+        from actions.utils.i18n import t
+
+        profile_locale = "vi"
+        try:
+            from actions.services.profile import load_user_profile
+
+            profile = await load_user_profile(user_id)
+            profile_locale = profile.normalized_locale
+        except Exception:
+            pass
+        return [{"text": t("empty_message", profile_locale)}]
 
     session = await get_session(sender, user_id)
     result = await get_dialogue_engine().handle_turn(session, message)

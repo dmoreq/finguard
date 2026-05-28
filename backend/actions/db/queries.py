@@ -235,7 +235,7 @@ async def update_transaction(
     values = [*updates.values(), transaction_id, user_id]
 
     await conn.execute(
-        f"UPDATE transactions SET {columns} WHERE id = ? AND user_id = ?",
+        f"UPDATE transactions SET {columns} WHERE id = ? AND user_id = ?",  # nosec B608
         values,
     )
     await conn.commit()
@@ -244,16 +244,24 @@ async def update_transaction(
 
 async def get_profile(conn: aiosqlite.Connection, user_id: str) -> dict[str, str]:
     cursor = await conn.execute(
-        "SELECT display_name, currency, timezone FROM profiles WHERE id = ?",
+        "SELECT display_name, currency, timezone, locale FROM profiles WHERE id = ?",
         (user_id,),
     )
     row = await cursor.fetchone()
     if not row:
-        return {"display_name": user_id[:8], "currency": "USD", "timezone": "UTC"}
+        return {
+            "display_name": user_id[:8],
+            "currency": "VND",
+            "timezone": "Asia/Ho_Chi_Minh",
+            "locale": "vi",
+        }
+    keys = row.keys() if hasattr(row, "keys") else []
+    locale = row["locale"] if "locale" in keys else "vi"
     return {
         "display_name": row["display_name"] or user_id[:8],
-        "currency": row["currency"] or "USD",
-        "timezone": row["timezone"] or "UTC",
+        "currency": row["currency"] or "VND",
+        "timezone": row["timezone"] or "Asia/Ho_Chi_Minh",
+        "locale": locale or "vi",
     }
 
 
@@ -264,27 +272,48 @@ async def update_profile(
     display_name: str | None = None,
     currency: str | None = None,
     timezone: str | None = None,
+    locale: str | None = None,
 ) -> dict[str, str]:
     current = await get_profile(conn, user_id)
     merged = {
         "display_name": display_name if display_name is not None else current["display_name"],
         "currency": currency if currency is not None else current["currency"],
         "timezone": timezone if timezone is not None else current["timezone"],
+        "locale": locale if locale is not None else current.get("locale", "vi"),
     }
     await conn.execute(
         """
-        INSERT INTO profiles (id, display_name, currency, timezone, updated_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO profiles (id, display_name, currency, timezone, locale, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT (id) DO UPDATE SET
           display_name = excluded.display_name,
           currency = excluded.currency,
           timezone = excluded.timezone,
+          locale = excluded.locale,
           updated_at = excluded.updated_at
         """,
-        (user_id, merged["display_name"], merged["currency"], merged["timezone"], _now_iso()),
+        (
+            user_id,
+            merged["display_name"],
+            merged["currency"],
+            merged["timezone"],
+            merged["locale"],
+            _now_iso(),
+        ),
     )
     await conn.commit()
     return merged
+
+
+async def get_expense_total(
+    conn: aiosqlite.Connection,
+    user_id: str,
+    period: str,
+    timezone: str = "UTC",
+    category: str | None = None,
+) -> float:
+    spending = await get_spending_by_category(conn, user_id, period, timezone, category)
+    return sum(item.total for item in spending)
 
 
 async def clear_user_transactions(conn: aiosqlite.Connection, user_id: str) -> None:

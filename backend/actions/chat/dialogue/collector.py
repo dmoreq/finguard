@@ -11,6 +11,7 @@ from actions.chat.respond.payloads import text_message
 from actions.services.profile import UserProfile
 from actions.services.record_transaction import record_transaction
 from actions.services.types import ServiceResult
+from actions.utils.i18n import t
 
 
 class TransactionCollector:
@@ -28,10 +29,10 @@ class TransactionCollector:
         return ExtractResult(status="partial", fields=fields, source="rules")
 
     @staticmethod
-    def _message_for_extract_error(result: ExtractResult) -> str:
+    def _message_for_extract_error(result: ExtractResult, locale: str) -> str:
         if result.status == "validation_error":
-            return "I need a positive amount and a category. Please try again."
-        return "I couldn't reach the extraction service. Please try again or be more specific."
+            return t("extract_validation", locale)
+        return t("extract_api_error", locale)
 
     async def collect(
         self,
@@ -43,7 +44,7 @@ class TransactionCollector:
     ) -> ServiceResult:
         extracted = await self._resolve_fields(text)
         if extracted.status in ("validation_error", "api_error"):
-            msg = self._message_for_extract_error(extracted)
+            msg = self._message_for_extract_error(extracted, profile.normalized_locale)
             return ServiceResult(messages=[text_message(msg)])
 
         fields = dict(extracted.fields)
@@ -56,7 +57,9 @@ class TransactionCollector:
         missing = draft.missing_required()
         if missing:
             session.dialogue_phase = "collecting"
-            prompt = prompt_for_missing_field(missing[0], draft.transaction_type)
+            prompt = prompt_for_missing_field(
+                missing[0], draft.transaction_type, profile.normalized_locale
+            )
             return ServiceResult(messages=[text_message(prompt)])
 
         return await record_transaction(draft.to_record_input(profile))

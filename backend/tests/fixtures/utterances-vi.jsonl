@@ -1,0 +1,56 @@
+{"intent": "log_expense", "text": "Chi tiêu 50k ăn trưa"}
+{"intent": "log_expense", "text": "Mua cà phê 35k"}
+{"intent": "log_expense", "text": "Trả 200k tiền điện"}
+{"intent": "log_expense", "text": "Hôm nay tiêu 80k Grab"}
+{"intent": "log_expense", "text": "chi tieu 1 triệu tiền nhà"}
+{"intent": "log_expense", "text": "tiêu 100 nghìn đi chợ"}
+{"intent": "log_expense", "text": "mua đồ ăn uống 120k"}
+{"intent": "log_expense", "text": "trả 500.000đ xăng"}
+{"intent": "log_expense", "text": "chi 80 ngàn cà phê"}
+{"intent": "log_expense", "text": "tiêu 45k taxi"}
+{"intent": "log_income", "text": "Nhận lương 15 triệu"}
+{"intent": "log_income", "text": "Freelance 3 triệu"}
+{"intent": "log_income", "text": "Thưởng 2 triệu"}
+{"intent": "log_income", "text": "nhận tiền lương tháng này"}
+{"intent": "log_income", "text": "lương 20tr"}
+{"intent": "log_income", "text": "thu nhập freelance 5 triệu"}
+{"intent": "log_income", "text": "nhận thưởng 1 triệu"}
+{"intent": "log_income", "text": "tiền lương 12 triệu"}
+{"intent": "check_balance", "text": "Số dư tháng nay"}
+{"intent": "check_balance", "text": "Thu chi tháng này thế nào"}
+{"intent": "check_balance", "text": "Còn bao nhiêu tiền"}
+{"intent": "check_balance", "text": "xem số dư"}
+{"intent": "check_balance", "text": "tình hình thu chi"}
+{"intent": "check_balance", "text": "số dư hiện tại"}
+{"intent": "check_balance", "text": "thu chi tháng nay"}
+{"intent": "check_balance", "text": "còn dư bao nhiêu"}
+{"intent": "analyze_spending", "text": "Tháng nay chi bao nhiêu"}
+{"intent": "analyze_spending", "text": "Chi tiêu theo danh mục"}
+{"intent": "analyze_spending", "text": "Tuần này tiêu gì nhiều nhất"}
+{"intent": "analyze_spending", "text": "chi tiêu ăn uống tháng này"}
+{"intent": "analyze_spending", "text": "tổng chi tháng trước"}
+{"intent": "analyze_spending", "text": "so sánh chi tiêu tháng này"}
+{"intent": "analyze_spending", "text": "chi tiêu tăng so với tháng trước"}
+{"intent": "analyze_spending", "text": "xem chi tiêu 7 ngày qua"}
+{"intent": "list_transactions", "text": "Xem giao dịch gần đây"}
+{"intent": "list_transactions", "text": "Lịch sử chi tiêu"}
+{"intent": "list_transactions", "text": "danh sách giao dịch"}
+{"intent": "list_transactions", "text": "giao dịch mới nhất"}
+{"intent": "list_transactions", "text": "xem lịch sử"}
+{"intent": "manage_confirm", "text": "Xác nhận", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "Đúng rồi", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "Lưu", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "Ok", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "đồng ý", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "Hủy", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "Bỏ", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "Không lưu", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "Xóa", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "không", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "Sửa thành 60k", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "Đổi danh mục thành ăn uống", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "Sửa số tiền 100k", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "sửa thành 80 ngàn", "confirmation_pending": true}
+{"intent": "chitchat", "text": "xin chào"}
+{"intent": "chitchat", "text": "cảm ơn"}
+{"intent": "chitchat", "text": "giúp tôi"}

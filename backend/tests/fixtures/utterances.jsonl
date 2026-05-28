@@ -25,5 +25,16 @@
 {"intent": "manage_discard", "text": "discard", "confirmation_pending": true}
 {"intent": "manage_discard", "text": "cancel", "confirmation_pending": true}
 {"intent": "manage_edit", "text": "change amount to 50", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "yep", "confirmation_pending": true}
+{"intent": "manage_confirm", "text": "okay save it", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "never mind", "confirmation_pending": true}
+{"intent": "manage_discard", "text": "delete", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "set amount to 40", "confirmation_pending": true}
+{"intent": "manage_edit", "text": "change category to transport", "confirmation_pending": true}
+{"intent": "log_expense", "text": "spent $22 on gas"}
+{"intent": "log_expense", "text": "I bought lunch for 12 dollars"}
+{"intent": "log_income", "text": "received paycheck 2500"}
+{"intent": "analyze_spending", "text": "how much did I spend on food"}
 {"intent": "chitchat", "text": "hello"}
 {"intent": "chitchat", "text": "thanks"}
+{"intent": "chitchat", "text": "thank you"}

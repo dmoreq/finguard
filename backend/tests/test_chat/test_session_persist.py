@@ -41,7 +41,7 @@ async def test_pending_survives_new_store_instance(db_path) -> None:
             "metadata": {"user_id": "user-a"},
         }
     )
-    assert "Saved" in second[0].get("text", "")
+    assert "Saved" in second[0].get("text", "") or "Đã lưu" in second[0].get("text", "")
 
 
 @pytest.mark.asyncio

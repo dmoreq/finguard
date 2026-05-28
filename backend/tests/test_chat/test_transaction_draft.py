@@ -22,5 +22,5 @@ def test_to_record_input() -> None:
 
 
 def test_prompt_for_category_income() -> None:
-    msg = prompt_for_missing_field("category", "income")
+    msg = prompt_for_missing_field("category", "income", "en")
     assert "income source" in msg

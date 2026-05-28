@@ -9,7 +9,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from actions.db.client import get_db
+from actions.db.queries import insert_transaction
 from actions.models.transaction import TransactionInsert, TransactionRow
+
+REPORT_USER_ID = "user-reports"
+REPORT_TIMEZONE = "UTC"
 
 
 @pytest.fixture(autouse=True)
@@ -27,6 +31,49 @@ def db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "test.db"
     monkeypatch.setenv("FINGUARD_DB_PATH", str(path))
     return path
+
+
+@pytest.fixture
+async def seeded_report_transactions(db_path: Path) -> AsyncGenerator[str, None]:
+    """Confirmed income and expenses in May 2026 for this_month queries."""
+    rows = [
+        TransactionInsert(
+            user_id=REPORT_USER_ID,
+            type="income",
+            amount=3000.0,
+            category="salary",
+            transaction_date="2026-05-01",
+            status="confirmed",
+        ),
+        TransactionInsert(
+            user_id=REPORT_USER_ID,
+            type="expense",
+            amount=80.0,
+            category="groceries",
+            transaction_date="2026-05-10",
+            status="confirmed",
+        ),
+        TransactionInsert(
+            user_id=REPORT_USER_ID,
+            type="expense",
+            amount=20.0,
+            category="dining",
+            transaction_date="2026-05-15",
+            status="confirmed",
+        ),
+        TransactionInsert(
+            user_id=REPORT_USER_ID,
+            type="expense",
+            amount=50.0,
+            category="groceries",
+            transaction_date="2026-05-20",
+            status="confirmed",
+        ),
+    ]
+    async with get_db() as conn:
+        for row in rows:
+            await insert_transaction(conn, row)
+    yield REPORT_USER_ID
 
 
 @pytest.fixture

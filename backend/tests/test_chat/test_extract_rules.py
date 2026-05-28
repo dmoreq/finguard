@@ -16,3 +16,17 @@ def test_extract_fields() -> None:
     assert fields["amount"] == 45.0
     assert fields["category"] == "groceries"
     assert fields["transaction_type"] == "expense"
+
+
+def test_edit_fields_amount() -> None:
+    from actions.chat.extraction.rules import build_edit_fields
+
+    fields = build_edit_fields("change amount to 50")
+    assert fields["amount"] == 50.0
+
+
+def test_edit_fields_category() -> None:
+    from actions.chat.extraction.rules import build_edit_fields
+
+    fields = build_edit_fields("change category to dining")
+    assert fields["category"] == "dining"

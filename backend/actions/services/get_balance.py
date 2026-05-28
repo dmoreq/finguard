@@ -9,16 +9,19 @@ from actions.db.client import get_db
 from actions.db.queries import get_balance_summary
 from actions.services.types import ServiceResult
 from actions.utils.formatting import format_currency
+from actions.utils.i18n import period_label, t
 
 
 class BalanceInput(BaseModel):
     user_id: str
     query_period: str = "this_month"
-    user_currency: str = "USD"
+    user_currency: str = "VND"
     user_timezone: str = "UTC"
+    user_locale: str = "vi"
 
 
 async def get_balance(input: BalanceInput) -> ServiceResult:
+    locale = input.user_locale
     try:
         async with get_db() as conn:
             balance = await get_balance_summary(
@@ -28,9 +31,7 @@ async def get_balance(input: BalanceInput) -> ServiceResult:
                 input.user_timezone,
             )
     except Exception:
-        return ServiceResult(
-            messages=[text_message("Sorry, I couldn't fetch your balance. Please try again.")]
-        )
+        return ServiceResult(messages=[text_message(t("balance_error", locale))])
 
     income_fmt = format_currency(balance.income, input.user_currency)
     expenses_fmt = format_currency(balance.expenses, input.user_currency)
@@ -38,18 +39,19 @@ async def get_balance(input: BalanceInput) -> ServiceResult:
 
     if balance.net > 0:
         sentiment = "positive"
-        net_text = f"✓ {net_fmt} in net income"
+        net_text = f"✓ Thu nhập ròng {net_fmt}" if locale == "vi" else f"✓ {net_fmt} in net income"
     elif balance.net < 0:
         sentiment = "negative"
-        net_text = f"✗ {net_fmt} in net expenses"
+        net_text = f"✗ Chi vượt thu {net_fmt}" if locale == "vi" else f"✗ {net_fmt} in net expenses"
     else:
         sentiment = "neutral"
-        net_text = "Balanced — no net change"
+        net_text = "Cân bằng — không đổi" if locale == "vi" else "Balanced — no net change"
 
-    period_label = input.query_period.replace("_", " ").title()
-    message = (
-        f"**{period_label}:**\nIncome: {income_fmt}\nExpenses: {expenses_fmt}\nNet: {net_text}"
-    )
+    label = period_label(input.query_period, locale)
+    if locale == "vi":
+        message = f"**{label}:**\nThu: {income_fmt}\nChi: {expenses_fmt}\nRòng: {net_text}"
+    else:
+        message = f"**{label}:**\nIncome: {income_fmt}\nExpenses: {expenses_fmt}\nNet: {net_text}"
 
     return ServiceResult(
         messages=[

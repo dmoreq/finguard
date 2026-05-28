@@ -11,6 +11,7 @@ from actions.services.delete_transaction import DeleteInput, delete_transaction
 from actions.services.profile import UserProfile
 from actions.services.types import ServiceResult
 from actions.services.update_transaction import UpdateInput, update_transaction
+from actions.utils.i18n import t
 
 
 class PendingConfirmationHandler:
@@ -46,6 +47,7 @@ class PendingConfirmationHandler:
                     transaction_id=session.last_transaction_id or "",
                     user_currency=profile.currency,
                     user_timezone=profile.timezone,
+                    user_locale=profile.normalized_locale,
                     confirm=True,
                 )
             )
@@ -55,6 +57,7 @@ class PendingConfirmationHandler:
                 DeleteInput(
                     user_id=profile.user_id,
                     transaction_id=session.last_transaction_id or "",
+                    user_locale=profile.normalized_locale,
                 )
             )
 
@@ -62,12 +65,7 @@ class PendingConfirmationHandler:
             edits = self._edit_extractor.extract_edit(text)
             if not edits:
                 return ServiceResult(
-                    messages=[
-                        text_message(
-                            "What should I change? You can say e.g. "
-                            "'change amount to 50' or 'category dining'."
-                        )
-                    ]
+                    messages=[text_message(t("edit_prompt", profile.normalized_locale))]
                 )
             return await update_transaction(
                 UpdateInput(
@@ -75,6 +73,7 @@ class PendingConfirmationHandler:
                     transaction_id=session.last_transaction_id or "",
                     user_currency=profile.currency,
                     user_timezone=profile.timezone,
+                    user_locale=profile.normalized_locale,
                     confirm=False,
                     amount=edits.get("amount"),
                     category=edits.get("category"),

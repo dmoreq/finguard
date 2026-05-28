@@ -7,6 +7,7 @@ from typing import Any
 
 from actions.services.profile import UserProfile
 from actions.services.record_transaction import RecordInput
+from actions.utils.i18n import t
 
 
 @dataclass(frozen=True)
@@ -42,13 +43,21 @@ class TransactionDraft:
             transaction_type=tx_type,  # type: ignore[arg-type]
             user_currency=profile.currency,
             user_timezone=profile.timezone,
+            user_locale=profile.normalized_locale,
         )
 
 
-def prompt_for_missing_field(field: str, transaction_type: str) -> str:
+def prompt_for_missing_field(field: str, transaction_type: str, locale: str = "vi") -> str:
     if field == "amount":
-        return "How much was it? (e.g. 45 or $12.50)"
+        return t("missing_amount", locale)
     if field == "category":
-        kind = "income source" if transaction_type == "income" else "category"
-        return f"What {kind} was that? (e.g. groceries, dining, salary)"
-    return "Could you tell me a bit more?"
+        kind = (
+            t("income_source", locale)
+            if transaction_type == "income"
+            else t("category_kind", locale)
+        )
+        template = t("missing_category", locale)
+        if "{kind}" in template:
+            return template.format(kind=kind)
+        return template
+    return t("missing_more", locale)

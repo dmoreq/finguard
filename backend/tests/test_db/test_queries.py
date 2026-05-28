@@ -172,7 +172,7 @@ async def test_clear_user_transactions_only_target_user(db_conn, tx_insert) -> N
 
 async def test_profile_defaults_and_update(db_conn) -> None:
     profile = await get_profile(db_conn, "local-user")
-    assert profile["currency"] == "USD"
+    assert profile["currency"] == "VND"
 
     updated = await update_profile(db_conn, "local-user", display_name="Test User", currency="EUR")
     assert updated["display_name"] == "Test User"
