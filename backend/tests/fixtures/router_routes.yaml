@@ -1,0 +1,39 @@
+routes:
+  - name: log_expense
+    utterances:
+      - I spent $5 on coffee
+      - paid $12 for lunch
+      - groceries 50k
+      - bought groceries for $80
+      - spent 45 on transport
+      - coffee 4.50 dining
+      - I paid twenty dollars for dinner
+      - chi tieu 50k an trua
+  - name: log_income
+    utterances:
+      - got paid $2000
+      - freelance payment 500 dollars
+      - received a bonus of $300
+      - salary deposit this month
+  - name: check_balance
+    utterances:
+      - what's my balance?
+      - how much did I earn this month?
+      - show income vs expenses
+      - balance this month
+  - name: analyze_spending
+    utterances:
+      - how much did I spend last month?
+      - spending breakdown by category
+      - show my grocery spending
+      - expenses last 7 days
+  - name: list_transactions
+    utterances:
+      - show recent transactions
+      - what did I record?
+      - transaction history please
+  - name: chitchat
+    utterances:
+      - hello
+      - thanks
+      - help me
