@@ -1,32 +1,32 @@
 # Finguard backend
 
-Rasa CALM assistant + Python action server.
+Unified **FastAPI** app: chat webhook + SQLite data API.
 
-## Lite local (default)
-
-Only **Rasa** uses Docker. Actions and LiteLLM run on the host:
+## Run
 
 ```bash
-# From repo root
-make dev
-```
-
-Or manually:
-
-```bash
-cd backend
 uv sync
-uv run uvicorn actions.server:app --host 127.0.0.1 --port 5055
-uv run litellm --config litellm/config.yaml --port 4000
-docker compose up -d    # Rasa on :5005
+uv run uvicorn actions.server:app --host 127.0.0.1 --port 5055 --reload
 ```
 
-## Commands
+## Endpoints
 
-| Command | Description |
-|---------|-------------|
-| `make train` | Train model (from repo root) |
-| `make down` | Stop all lite processes |
-| `uv run pytest tests/ -q` | Unit tests |
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/health` | Health check |
+| POST | `/webhooks/rest/webhook` | Chat (Rasa-compatible JSON) |
+| GET | `/data/transactions` | List transactions |
+| GET/PATCH | `/data/profile` | User profile |
 
-See [docs/runbooks/local-development.md](../docs/runbooks/local-development.md).
+## Tests
+
+```bash
+uv run pytest tests/ -q
+uv run python scripts/spike_router.py
+```
+
+## Layout
+
+- `actions/chat/` — router, dialogue engine, webhook
+- `actions/services/` — business logic
+- `actions/db/` — SQLite

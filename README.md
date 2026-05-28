@@ -1,44 +1,47 @@
 # Finguard
 
-Chat to track income and expenses. **Local-first:** Next.js + Rasa + SQLite (no Supabase, no login yet).
+Chat to track income and expenses. **Local-first:** Next.js + Python chat backend + SQLite (no Supabase, no login yet).
+
+## Stack
 
 ```text
-frontend/   Next.js UI
-backend/    Rasa (Docker) + Python actions + SQLite
+frontend/    Next.js UI
+backend/     FastAPI chat + data API, SQLite
 ```
-
-See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** and **[docs/runbooks/local-development.md](docs/runbooks/local-development.md)**.
 
 ## Quick start
 
 ```bash
 make setup
-# Edit backend/.env (GEMINI_API_KEY) and frontend/.env.local (RASA_URL)
-make train    # first time / after flow changes (requires Rasa Pro license)
-make dev      # → http://localhost:3000/chat
+# Edit frontend/.env.local (CHAT_BACKEND_URL=http://127.0.0.1:5055)
+make dev
 ```
 
-Stop: `Ctrl+C` then `make down`
+Open http://localhost:3000
 
-**Docker** is only for Rasa Pro. Actions and LiteLLM run on the host with `uv`.
+**No Docker or Rasa license required.**
 
-## Env
+## Environment
 
-**frontend/.env.local**
+`frontend/.env.local`:
 
-```bash
-RASA_URL=http://localhost:5005
+```env
+CHAT_BACKEND_URL=http://127.0.0.1:5055
 ACTIONS_URL=http://127.0.0.1:5055
 ```
 
-**backend/.env**
+Optional `backend/.env`: `GEMINI_API_KEY` for richer slot extraction.
 
-```bash
-GEMINI_API_KEY=
-LITELLM_MASTER_KEY=dev-local-key
-# Optional: RASA_PRO_LICENSE=   (empty → mock Rasa on :5005)
-```
+## Commands
 
-Database file: `backend/data/finguard.db` (created automatically).
+| Command | Description |
+|---------|-------------|
+| `make dev` | Backend + Next.js |
+| `make test` | Vitest + pytest |
+| `make smoke` | Tests + webhook smoke |
+| `make down` | Stop local processes |
 
-Supabase SQL for a future cloud phase: `docs/archive/supabase/migrations/`.
+## Docs
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/runbooks/local-development.md](docs/runbooks/local-development.md)

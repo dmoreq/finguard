@@ -42,7 +42,7 @@ describe("Rasa webhook golden fixtures", () => {
   it("maps text-only golden fixture", () => {
     const result = mapRasaWebhookToChatResponse(loadFixture("text-only-webhook.json"));
     expect(result.messages[0]?.type).toBe("text");
-    expect(result.messages[0]?.content).toContain("Mock Rasa");
+    expect(result.messages[0]?.content).toContain("log expenses");
   });
 
   it("falls back when custom transaction payload is invalid", () => {

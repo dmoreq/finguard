@@ -1,5 +1,5 @@
 [
   {
-    "text": "Mock Rasa is running. Set RASA_PRO_LICENSE for full CALM."
+    "text": "Hi! I can log expenses and income, show your balance, or summarize spending. Try: \"spent $12 on coffee\"."
   }
 ]

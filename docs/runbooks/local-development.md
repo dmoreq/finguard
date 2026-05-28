@@ -1,77 +1,55 @@
 # Local development
 
-No Supabase, no login. **SQLite + localStorage + Rasa.**
-
-See [ARCHITECTURE.md](../ARCHITECTURE.md).
+No Supabase, no login. **SQLite + localStorage + Python chat backend.**
 
 ## Prerequisites
 
-- Node 22+, pnpm
-- Python 3.12+, uv
-- Docker Desktop (Rasa Pro only; mock Rasa needs no Docker)
-- `GEMINI_API_KEY` in `backend/.env` (for `make train` with Rasa Pro)
+- Node 20+, pnpm
+- Python 3.12+, [uv](https://docs.astral.sh/uv/)
 
-## Start
+## First-time setup
 
 ```bash
 make setup
-make train    # first time / after flow changes (Rasa Pro license required)
-make dev      # → http://localhost:3000/chat
 ```
 
-Stop: `Ctrl+C` then `make down`
+Edit:
 
-Frontend only (starts action server + mock Rasa if ports are free):
+- `frontend/.env.local` — `CHAT_BACKEND_URL=http://127.0.0.1:5055`
+- `backend/.env` — optional `GEMINI_API_KEY`
+
+## Run
 
 ```bash
-pnpm frontend:dev
+make dev
 ```
 
-## Env
+- Backend: http://127.0.0.1:5055 (chat webhook + data API)
+- Frontend: http://localhost:3000
 
-**frontend/.env.local**
+Frontend only (starts backend if :5055 is free):
 
 ```bash
-RASA_URL=http://localhost:5005
-ACTIONS_URL=http://127.0.0.1:5055
+make frontend
 ```
 
-**backend/.env**
-
-```bash
-GEMINI_API_KEY=your-key
-LITELLM_MASTER_KEY=dev-local-key
-# RASA_PRO_LICENSE=   # leave empty for mock Rasa on :5005
-```
-
-## Data files
-
-| What | Location |
-|------|----------|
-| Transactions, profile | `backend/data/finguard.db` |
-| Chat messages | Browser `localStorage` |
-
-## Health
+## Verify
 
 ```bash
 make health
-# or
-./scripts/check-health.sh
+make test
+make smoke
 ```
 
-## Happy path
+Manual:
 
-- [ ] Open http://localhost:3000/chat
-- [ ] Send: `Spent $10 on coffee`
-- [ ] See pending transaction card (mock or CALM)
-- [ ] Confirm in UI
-- [ ] Transaction appears in sidebar
+- [ ] Record expense in chat → pending card → confirm → sidebar updates
+- [ ] Ask "what's my balance this month?"
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---------|-----|
-| `ERR_CONNECTION_REFUSED` on `/api/data/*` | Run `make dev` or `pnpm frontend:dev` (starts action server) |
-| 503 on `/api/chat` | Start mock Rasa or `make dev`; check `RASA_URL` |
-| Rasa Pro won't start | Set `RASA_PRO_LICENSE` or use mock mode (empty license) |
-| Port 5055 in use | `make down`; kill stale `uvicorn` / Docker containers |
+| Issue | Fix |
+|-------|-----|
+| 503 on `/api/chat` | Run `make dev`; set `CHAT_BACKEND_URL` in `.env.local` |
+| Backend won't start | See `.dev-lite/backend.log` |
+| Empty reports | Confirm transactions after recording |

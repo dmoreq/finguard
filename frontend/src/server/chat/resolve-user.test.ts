@@ -1,6 +1,6 @@
 import { LOCAL_USER_ID } from "@/lib/constants";
 import { describe, expect, it, vi } from "vitest";
-import { getRasaUrl, resolveChatUserId } from "./resolve-user";
+import { getChatBackendUrl, getRasaUrl, resolveChatUserId } from "./resolve-user";
 
 describe("resolveChatUserId", () => {
   it("returns the local dev user id", async () => {
@@ -8,16 +8,33 @@ describe("resolveChatUserId", () => {
   });
 });
 
-describe("getRasaUrl", () => {
-  it("returns trimmed RASA_URL", () => {
-    vi.stubEnv("RASA_URL", "  http://localhost:5005  ");
-    expect(getRasaUrl()).toBe("http://localhost:5005");
+describe("getChatBackendUrl", () => {
+  it("returns trimmed CHAT_BACKEND_URL", () => {
+    vi.stubEnv("CHAT_BACKEND_URL", "  http://localhost:5055  ");
+    vi.stubEnv("RASA_URL", "");
+    expect(getChatBackendUrl()).toBe("http://localhost:5055");
     vi.unstubAllEnvs();
   });
 
-  it("returns null for empty RASA_URL", () => {
+  it("falls back to RASA_URL", () => {
+    vi.stubEnv("CHAT_BACKEND_URL", "");
+    vi.stubEnv("RASA_URL", "http://localhost:5055");
+    expect(getChatBackendUrl()).toBe("http://localhost:5055");
+    vi.unstubAllEnvs();
+  });
+
+  it("returns null when unset", () => {
+    vi.stubEnv("CHAT_BACKEND_URL", "   ");
     vi.stubEnv("RASA_URL", "   ");
-    expect(getRasaUrl()).toBeNull();
+    expect(getChatBackendUrl()).toBeNull();
+    vi.unstubAllEnvs();
+  });
+});
+
+describe("getRasaUrl", () => {
+  it("delegates to getChatBackendUrl", () => {
+    vi.stubEnv("CHAT_BACKEND_URL", "http://localhost:5055");
+    expect(getRasaUrl()).toBe("http://localhost:5055");
     vi.unstubAllEnvs();
   });
 });

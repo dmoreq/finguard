@@ -1,6 +1,6 @@
 import { mapRasaWebhookToChatResponse } from "@/server/chat/map-rasa-responses";
 import { checkChatRateLimit } from "@/server/chat/rate-limit";
-import { getRasaUrl, resolveChatUserId } from "@/server/chat/resolve-user";
+import { getChatBackendUrl, resolveChatUserId } from "@/server/chat/resolve-user";
 import { type RasaWebhookPayload, parseChatRequest } from "@/server/chat/schemas";
 import { NextResponse } from "next/server";
 
@@ -23,22 +23,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const rasaUrl = getRasaUrl();
-    if (!rasaUrl) {
+    const chatBackendUrl = getChatBackendUrl();
+    if (!chatBackendUrl) {
       return NextResponse.json(
         {
           error: {
-            code: "RASA_NOT_CONFIGURED",
-            message: "Set RASA_URL in .env.local (e.g. http://localhost:5005).",
+            code: "CHAT_NOT_CONFIGURED",
+            message: "Set CHAT_BACKEND_URL in .env.local (e.g. http://localhost:5055).",
           },
         },
         { status: 503 },
       );
     }
 
-    let rasaResponse: Response;
+    let chatResponse: Response;
     try {
-      rasaResponse = await fetch(`${rasaUrl}/webhooks/rest/webhook`, {
+      chatResponse = await fetch(`${chatBackendUrl}/webhooks/rest/webhook`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: {
-            code: "RASA_UNAVAILABLE",
+            code: "CHAT_UNAVAILABLE",
             message: "The assistant is not running. From the project root, run: make dev",
           },
         },
@@ -60,11 +60,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!rasaResponse.ok) {
+    if (!chatResponse.ok) {
       return NextResponse.json(
         {
           error: {
-            code: "RASA_UNAVAILABLE",
+            code: "CHAT_UNAVAILABLE",
             message: "The assistant is temporarily unavailable. Run make dev and try again.",
           },
         },
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = (await rasaResponse.json()) as RasaWebhookPayload[];
+    const payload = (await chatResponse.json()) as RasaWebhookPayload[];
     const result = mapRasaWebhookToChatResponse(payload);
     return NextResponse.json(result);
   } catch (error) {

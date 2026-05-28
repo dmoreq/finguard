@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (scale tier for full enforcement)
+Superseded by [003-low-cost-chat-backend.md](./003-low-cost-chat-backend.md)
 
 ## Date
 

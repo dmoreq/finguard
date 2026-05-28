@@ -1,6 +1,6 @@
 # Finguard architecture
 
-**Next.js + Rasa CALM + local SQLite.** No Supabase or auth until you add them later.
+**Next.js + low-cost Python chat backend + local SQLite.** No Supabase or auth until you add them later.
 
 ## The whole system in one picture
 
@@ -8,35 +8,31 @@
 You (browser)
     │
     ▼
-Next.js  ──/api/data/*──►  Action server (FastAPI)  ──►  SQLite (backend/data/)
+Next.js  ──/api/data/*──►  Backend (FastAPI) :5055  ──►  SQLite (backend/data/)
     │
     │  POST /api/chat
     ▼
-Rasa CALM  ──flows──►  Action server (custom actions)
-    │
-    └── LLM via LiteLLM (host) when RASA_PRO_LICENSE is set
-        or mock-rasa.py locally without a license
+Backend  ──Semantic Router + FSM + rules/LLM extract──►  same SQLite
 ```
 
-Chat messages persist in **browser localStorage** for now. Transactions and profile live in **SQLite**.
+Chat uses a **keyword router** and **deterministic dialogue engine** (no Rasa CALM, no Pro license). Optional `GEMINI_API_KEY` improves extraction; rule-based parsing works offline.
 
 ## What each piece does
 
 | Piece | Job |
 |-------|-----|
-| **Next.js** (`frontend/`) | UI, `/api/chat` → Rasa, `/api/data/*` → action server |
-| **Action server** (`backend/actions/`) | Rasa custom actions + REST reads for the UI |
+| **Next.js** (`frontend/`) | UI, `/api/chat` → backend webhook, `/api/data/*` → backend data API |
+| **Backend** (`backend/actions/`) | `POST /webhooks/rest/webhook` (chat) + `/data/*` (CRUD) |
 | **SQLite** | Transactions and profile (`backend/data/finguard.db`) |
-| **Rasa** (`backend/rasa/`) | CALM flows: record, confirm, reports |
-| **LiteLLM** (host, optional) | LLM routing when using Rasa Pro |
+| **Chat package** (`actions/chat/`) | Router, FSM (`engine.py`), rule extraction |
+| **Services** (`actions/services/`) | Record, confirm, reports (no Rasa SDK) |
 
 ## Repo layout
 
 ```text
 frontend/     Next app
-backend/      Rasa config + Python actions
-docs/         Architecture, runbooks, archive/
-docs/archive/supabase/   Deferred Postgres migrations
+backend/      Python backend (chat + data API)
+docs/         Architecture, runbooks, plans
 ```
 
 ## Local dev
@@ -45,17 +41,17 @@ docs/archive/supabase/   Deferred Postgres migrations
 make dev
 ```
 
+Set `CHAT_BACKEND_URL=http://127.0.0.1:5055` in `frontend/.env.local`.
+
 See [runbooks/local-development.md](./runbooks/local-development.md).
 
-## When to add Supabase again
+## Migration note
 
-1. Multi-user auth and hosted Postgres.
-2. Apply archived migrations under `docs/archive/supabase/migrations/`.
-3. Add Supabase auth to Next.js; see [decisions/001-service-role-in-actions.md](./decisions/001-service-role-in-actions.md).
+Rasa CALM artifacts were removed in favor of [LOW_COST_IMPLEMENTATION_PLAN.md](./LOW_COST_IMPLEMENTATION_PLAN.md). Historical Rasa docs live under `docs/archive/`.
 
 ## More docs
 
-- [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md) — status
+- [low_cost_plan.md](./low_cost_plan.md) — design rationale
+- [LOW_COST_IMPLEMENTATION_PLAN.md](./LOW_COST_IMPLEMENTATION_PLAN.md) — execution plan
 - [TEST_STRATEGY.md](./TEST_STRATEGY.md) — QA plan
-- [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) — legacy removal log
-- [archive/](./archive/) — superseded planning docs
+- [decisions/003-low-cost-chat-backend.md](./decisions/003-low-cost-chat-backend.md) — ADR
