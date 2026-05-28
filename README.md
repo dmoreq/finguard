@@ -56,7 +56,8 @@ Optional `backend/.env`: `GEMINI_API_KEY` for future LLM-based extraction.
 | Doc | Description |
 |-----|-------------|
 | [docs/README.md](docs/README.md) | Documentation index |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | As-built system design |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Backlog (Burr, DuckDB, semantic router, …) |
 | [docs/runbooks/local-development.md](docs/runbooks/local-development.md) | Local dev runbook |
 | [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Testing approach |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |

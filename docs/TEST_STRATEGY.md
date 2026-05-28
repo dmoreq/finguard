@@ -141,3 +141,4 @@ make smoke             # backend + webhook smoke
 - Playwright in CI (nightly or on `workflow_dispatch`)
 - Auth tests when Supabase returns
 - k6 load tests for `/api/chat` rate limits
+- When [ROADMAP](./ROADMAP.md) items land: router accuracy suite (semantic-router), Burr transition tests, DuckDB report benchmarks

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (direction). **Implementation:** see [ADR-004](./004-chat-backend-evolution.md), [ARCHITECTURE.md](../ARCHITECTURE.md), and [ROADMAP.md](../ROADMAP.md).
 
 ## Date
 
@@ -42,15 +42,19 @@ Replace Rasa CALM with:
 | LangGraph | Heavier stack for a finite set of finance flows |
 | Separate chat microservice on :5005 | Extra process/port; unified :5055 is simpler for local-first |
 
+## Implementation status
+
+The four-layer model is live; library names in this ADR are adopted incrementally. See [ADR-004](./004-chat-backend-evolution.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [ROADMAP.md](../ROADMAP.md), and [design/chat-backend-target.md](../design/chat-backend-target.md).
+
 ## Consequences
 
 - **Positive:** No Pro license; CI runs without `RASA_PRO_LICENSE`; clearer ownership of dialogue in Python.
-- **Positive:** LLM calls bounded to extraction steps.
-- **Negative:** One-time cost to port flow YAML → Burr graph and utterance bank tuning.
-- **Negative:** In-memory session state until optional SQLite `chat_sessions` table.
+- **Positive:** LLM calls bounded to extraction steps (when LLM extract is enabled).
+- **Negative:** Burr port deferred — see roadmap; `engine.py` maintained until complexity triggers Burr.
+- **Negative:** In-memory session state until optional SQLite `chat_sessions` table ([ROADMAP P2](../ROADMAP.md)).
 - **Supersedes:** [ADR-002: Rasa network trust](./002-rasa-network-trust.md) — same trust model applies to chat backend URL, not “Rasa” specifically.
 
 ## Verification
 
-- All items in [archive/low-cost-migration/implementation-plan.md](../archive/low-cost-migration/implementation-plan.md) Section 12 (global verification).
 - Golden webhook fixtures in `frontend/src/server/chat/fixtures/` pass without change.
+- Migration checklist (historical): [archive/low-cost-migration/implementation-plan.md](../archive/low-cost-migration/implementation-plan.md) Section 12.

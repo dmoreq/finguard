@@ -19,7 +19,7 @@
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — Stack overview (start here)
 - [runbooks/local-development.md](./runbooks/local-development.md) — `make dev`
 - [TEST_STRATEGY.md](./TEST_STRATEGY.md) — QA plan
-- [cleanup-plan-2026-05-28.md](./cleanup-plan-2026-05-28.md) — Legacy cleanup log
+- Supabase → SQLite cleanup (2026-05-28) — see [low-cost-migration/README.md](./low-cost-migration/README.md)
 - [archive/](./archive/) — Superseded Supabase-era plans
 - [schemas/chat-payloads.json](../schemas/chat-payloads.json) — Chat webhook payload contract
 - This file — Progress and day-to-day status

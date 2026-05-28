@@ -6,7 +6,8 @@ We use lightweight ADRs to capture significant technical decisions. Format follo
 |-----|-------|--------|
 | [001](./001-service-role-in-actions.md) | Service role in action server | Accepted (when Supabase returns) |
 | [002](./002-rasa-network-trust.md) | Rasa network trust boundary | Superseded by 003 |
-| [003](./003-low-cost-chat-backend.md) | Low-cost chat backend | **Accepted** (current) |
+| [003](./003-low-cost-chat-backend.md) | Low-cost chat backend | Accepted (direction) |
+| [004](./004-chat-backend-evolution.md) | Chat backend evolution (shipped vs target) | **Accepted** (current) |
 
 When adding a new ADR:
 

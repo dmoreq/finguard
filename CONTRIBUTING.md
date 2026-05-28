@@ -20,6 +20,8 @@ make dev
 
 See [docs/runbooks/local-development.md](docs/runbooks/local-development.md) for details.
 
+Planned chat-backend work (Burr, DuckDB, semantic router): [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Development workflow
 
 1. Create a branch from `main`.

@@ -4,7 +4,7 @@
 
 **Status:** Completed
 **Date:** 2026-05-28
-**Parent spec:** [design-rationale.md](./design-rationale.md)
+**Parent spec (archived):** superseded by [design/chat-backend-target.md](../../design/chat-backend-target.md)
 **Goal:** Replace Rasa CALM + Rasa Pro with Semantic Router + Burr + Instructor, reuse SQLite/handlers, and **remove all Rasa CALM code, tooling, and documentation** from the active codebase.
 
 ---
@@ -439,13 +439,13 @@ Run `cd backend && uv lock && uv sync` after edits.
 | Path | Change |
 |------|--------|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Rewrite for 4-layer chat on :5055 |
-| [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md) | New milestones or archive file |
+| [implementation-tracker-rasa-era.md](../implementation-tracker-rasa-era.md) | New milestones or archive file |
 | [TEST_STRATEGY.md](./TEST_STRATEGY.md) | Remove Rasa CALM e2e |
 | [runbooks/local-development.md](./runbooks/local-development.md) | No Docker Rasa, no train |
 | [runbooks/production-deploy.md](./runbooks/production-deploy.md) | Chat backend private network |
 | [README.md](../README.md) | Stack diagram |
 | [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) | Add “Rasa CALM cleanup” section executed |
-| [low_cost_plan.md](./low_cost_plan.md) | Link to this plan; status → implemented |
+| [design/chat-backend-target.md](../../design/chat-backend-target.md) | Link to this plan; status → implemented |
 
 ### 7.7 Archive — do not delete (historical)
 
@@ -586,10 +586,10 @@ Document in runbook: `burr-test-case` / Burr UI for debugging transitions during
 
 | Document | Action |
 |----------|--------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Replace Rasa diagram with 4-layer diagram from [low_cost_plan.md](./low_cost_plan.md) |
-| [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md) | Archive or replace with milestone table from this plan |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Replace Rasa diagram with 4-layer diagram from [design/chat-backend-target.md](../../design/chat-backend-target.md) |
+| [implementation-tracker-rasa-era.md](../implementation-tracker-rasa-era.md) | Archive or replace with milestone table from this plan |
 | [TEST_STRATEGY.md](./TEST_STRATEGY.md) | Chat/backend matrix; delete Rasa Pro e2e |
-| [low_cost_plan.md](./low_cost_plan.md) | Status: **Implemented** (link here) |
+| [design/chat-backend-target.md](../../design/chat-backend-target.md) | Status: **Implemented** (link here) |
 | [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) | Section 5: Rasa CALM removal executed |
 | [decisions/003-low-cost-chat-backend.md](./decisions/003-low-cost-chat-backend.md) | **Create** — D1–D7 |
 | [decisions/002-rasa-network-trust.md](./decisions/002-rasa-network-trust.md) | Status → **Superseded by ADR-003** |
@@ -685,7 +685,7 @@ docs: rewrite architecture for low-cost backend
 
 ## Related documents
 
-- [low_cost_plan.md](./low_cost_plan.md) — architecture rationale and review
+- [design/chat-backend-target.md](../../design/chat-backend-target.md) — architecture rationale and review
 - [TEST_STRATEGY.md](./TEST_STRATEGY.md) — update during Phase 9
 - [schemas/chat-payloads.json](../../schemas/chat-payloads.json) — contract to preserve (rename optional)
 

@@ -2,6 +2,8 @@
 
 **Next.js + Python chat backend + local SQLite.** No Supabase or auth until added later.
 
+This page describes the **as-built** system. For the **target** four-layer stack and **backlog** (including Burr and DuckDB), see [design/chat-backend-target.md](./design/chat-backend-target.md) and [ROADMAP.md](./ROADMAP.md).
+
 ## System diagram
 
 ```text
@@ -32,14 +34,27 @@ Chat history for the UI is stored in **browser localStorage**. Transactions and 
 | Data API | `backend/actions/server.py` | FastAPI app |
 | Database | `backend/actions/db/` | Schema, queries, migrations via bootstrap |
 
-## Chat pipeline
+## Chat pipeline (four layers, as shipped)
 
-1. **Router** (`chat/router.py`) — keyword-based intent (no LLM).
-2. **Engine** (`chat/engine.py`) — deterministic FSM: collect fields → pending card → confirm/discard/edit.
-3. **Extraction** (`chat/extract/rules.py`) — parse amount, category, period from text.
-4. **Services** — validate, write SQLite, return [webhook payloads](./schemas/chat-payloads.json).
+| Layer | Module | Role |
+|-------|--------|------|
+| 1 — Routing | `chat/router.py` | Keyword/regex intent (no LLM) |
+| 2 — Dialogue | `chat/engine.py` | FSM: collect → pending card → confirm / discard / edit |
+| 3 — Extraction | `chat/extract/rules.py` | Amount, category, period from text |
+| 4 — Data | `services/*` | SQLite writes/reads; [webhook payloads](./schemas/chat-payloads.json) |
 
-Optional `GEMINI_API_KEY` can be wired later for LLM extraction; rule-based parsing works without it.
+`GEMINI_API_KEY` is optional for future Outlines-based extraction; rules work without it.
+
+### Current vs target
+
+| Layer | Shipped | Target / backlog |
+|-------|---------|------------------|
+| 1 | Keyword router | Semantic Router — [ROADMAP P1](./ROADMAP.md) |
+| 2 | `engine.py` | **Burr** — [ROADMAP P3](./ROADMAP.md#burr-backlog-detail) |
+| 3 | Rules | Outlines + Gemini (fallback) — [ROADMAP P2](./ROADMAP.md) |
+| 4 | SQLite + services | + **DuckDB** for analytics — [ROADMAP P4](./ROADMAP.md#duckdb-backlog-detail) |
+
+See [ADR-004](./decisions/004-chat-backend-evolution.md).
 
 ## API contracts
 
@@ -59,10 +74,14 @@ Environment: `CHAT_BACKEND_URL` (alias `RASA_URL` deprecated).
 
 ## Related docs
 
-- [runbooks/local-development.md](./runbooks/local-development.md)
-- [TEST_STRATEGY.md](./TEST_STRATEGY.md)
-- [backend-query-audit.md](./backend-query-audit.md)
-- [decisions/003-low-cost-chat-backend.md](./decisions/003-low-cost-chat-backend.md)
+| Doc | Role |
+|-----|------|
+| [ROADMAP.md](./ROADMAP.md) | Backlog (Burr, DuckDB, semantic router, Outlines) |
+| [design/chat-backend-target.md](./design/chat-backend-target.md) | Target architecture |
+| [runbooks/local-development.md](./runbooks/local-development.md) | Local dev |
+| [TEST_STRATEGY.md](./TEST_STRATEGY.md) | Testing |
+| [backend-query-audit.md](./backend-query-audit.md) | SQLite `user_id` rules |
+| [decisions/003](./decisions/003-low-cost-chat-backend.md) · [004](./decisions/004-chat-backend-evolution.md) | ADRs |
 
 ## History
 

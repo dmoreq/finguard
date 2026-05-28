@@ -6,7 +6,9 @@ Documentation for [Finguard](../README.md) — a local-first personal finance ch
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and component responsibilities |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | **As-built** system design |
+| [ROADMAP.md](./ROADMAP.md) | Backlog and priorities (**Burr**, **DuckDB**, semantic router, Outlines) |
+| [design/chat-backend-target.md](./design/chat-backend-target.md) | **Target** chat backend (four layers) |
 | [runbooks/local-development.md](./runbooks/local-development.md) | Run the app locally (`make dev`) |
 | [TEST_STRATEGY.md](./TEST_STRATEGY.md) | How we test (pytest, Vitest, Playwright) |
 | [decisions/](./decisions/README.md) | Architecture decision records (ADRs) |
@@ -24,7 +26,9 @@ Documentation for [Finguard](../README.md) — a local-first personal finance ch
 ```text
 docs/
 ├── README.md                 ← you are here
-├── ARCHITECTURE.md
+├── ARCHITECTURE.md           As-built
+├── ROADMAP.md                Backlog (Burr, DuckDB, …)
+├── design/                   Target design (chat backend)
 ├── TEST_STRATEGY.md
 ├── decisions/                ADRs (numbered)
 ├── runbooks/                 Operational how-tos
