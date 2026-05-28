@@ -1,0 +1,37 @@
+name: Router eval (Vietnamese)
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  vi-hybrid-router:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync
+
+      - name: Cache FastEmbed model
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/fastembed
+            ~/.cache/huggingface
+          key: fastembed-${{ runner.os }}-v1
+          restore-keys: |
+            fastembed-${{ runner.os }}-
+
+      - name: Evaluate Vietnamese hybrid router accuracy
+        working-directory: backend
+        env:
+          ROUTER_MODE: hybrid
+          ROUTER_FIXTURE: vi
+        run: uv run python scripts/spike_router.py

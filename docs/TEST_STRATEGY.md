@@ -13,10 +13,12 @@ How we test Finguard: right layer, TDD for new behavior, golden contracts at bou
 | Layer | Tool | CI |
 |-------|------|-----|
 | Frontend unit | Vitest (~67 tests) | `pnpm test` |
-| Backend unit + DB | pytest (~46 tests) | `uv run pytest tests/` |
+| Backend unit + DB | pytest (~73 tests) | `uv run pytest tests/` |
+| Coverage report | [TEST_COVERAGE_REPORT.md](./TEST_COVERAGE_REPORT.md) | `make test-coverage` |
 | Chat integration | `tests/test_chat/*`, `smoke-e2e.sh` | `make smoke` |
 | Contract | Golden JSON + [chat-payloads.json](./schemas/chat-payloads.json) | Vitest |
-| Browser E2E | Playwright (7 specs) | `make test-e2e` (local) |
+| Browser E2E | Playwright (7 specs) | [e2e-nightly.yml](../.github/workflows/e2e-nightly.yml) (daily + manual) |
+| Hybrid router eval | `scripts/spike_router.py` | [router-eval.yml](../.github/workflows/router-eval.yml) (weekly + manual) |
 
 ### Pyramid
 
@@ -81,6 +83,9 @@ flowchart LR
 | `test_chat/test_session_persist.py` | SQLite session + confirm flow | |
 | `test_chat/test_webhook.py` | Webhook payloads | |
 | `test_chat/test_confirm_webhook.py` | Record → confirm | SQLite integration |
+| `test_chat/test_webhook_pending.py` | Discard / edit pending | CP-3 integration |
+| `test_chat/test_webhook_reports.py` | Balance / spending / list | CP-2 integration |
+| `test_chat/test_extract_llm.py` | Gemini error paths (mocked) | No live API |
 | `test_services/` | Service layer | DB fixtures |
 | `test_db/test_queries.py` | SQL | Temp `FINGUARD_DB_PATH` |
 | `test_server_data.py` | `/data/*` REST | TestClient |
@@ -119,7 +124,7 @@ flowchart LR
 | Record income | ✅ | ⭕ | ✅ | ⭕ |
 | Confirm pending | ✅ | ✅ | ✅ | ✅ |
 | Discard pending | ✅ | ✅ | ✅ | ✅ |
-| Edit pending | ✅ | ⭕ | ⭕ | ⭕ |
+| Edit pending | ✅ | ✅ | ✅ | ⭕ |
 | Balance report | ✅ | ✅ | ✅ | ⭕ |
 | Spending report | ✅ | ✅ | ✅ | ⭕ |
 | List transactions | ✅ | ⭕ | ⭕ | ⭕ |
@@ -140,8 +145,6 @@ make smoke             # backend + webhook smoke
 
 ## 8. Optional follow-ups
 
-- Playwright in CI (nightly or on `workflow_dispatch`)
 - Auth tests when Supabase returns
 - k6 load tests for `/api/chat` rate limits
 - Burr transition tests and DuckDB report benchmarks when P3/P4 land
-- Local hybrid router eval: `ROUTER_MODE=hybrid uv run pytest tests/test_chat/test_router.py::test_utterance_bank_accuracy`
