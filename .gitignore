@@ -34,6 +34,9 @@ out/
 *.tsbuildinfo
 .pnpm-store/
 
+# Stray Rasa cache at repo root (not backend/rasa/)
+/rasa/
+
 # ─── Rasa CALM ───────────────────────────────────────────────────
 backend/rasa/models/
 backend/.rasa_cache/

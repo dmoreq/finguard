@@ -43,12 +43,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify migration files
+      - name: Verify archived Supabase migration files
         run: |
           set -euo pipefail
-          count=$(find supabase/migrations -name '*.sql' | wc -l | tr -d ' ')
+          count=$(find docs/archive/supabase/migrations -name '*.sql' | wc -l | tr -d ' ')
           test "$count" -ge 3
-          for f in supabase/migrations/*.sql; do
+          for f in docs/archive/supabase/migrations/*.sql; do
             test -s "$f"
             echo "OK $(basename "$f")"
           done
