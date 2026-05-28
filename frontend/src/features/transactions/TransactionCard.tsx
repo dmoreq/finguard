@@ -100,10 +100,12 @@ export function TransactionCard({
                 color: isEditing ? "#fff" : config.accent,
                 background: isEditing ? config.accent : "transparent",
                 marginTop: 5,
-                padding: "3px 9px",
+                padding: "5px 11px",
+                fontSize: "13px",
+                minHeight: "32px",
               }}
             >
-              {isEditing ? "Close" : "Edit"}
+              {isEditing ? (isVi ? "Đóng" : "Close") : (isVi ? "Chỉnh sửa" : "Edit")}
             </button>
           )}
         </div>
@@ -130,7 +132,9 @@ export function TransactionCard({
                     draft.type === type ? transactionConfig[type].accent : "var(--border-strong)",
                   background: draft.type === type ? transactionConfig[type].accent : "transparent",
                   color: draft.type === type ? "#fff" : "var(--text-soft)",
-                  padding: "6px 4px",
+                  padding: "8px 4px",
+                  fontSize: "12px",
+                  minHeight: "36px",
                 }}
               >
                 {transactionConfig[type].badge}
@@ -146,6 +150,7 @@ export function TransactionCard({
             step="0.01"
             value={draft.amount}
             onChange={(event) => update("amount", Number.parseFloat(event.target.value) || 0)}
+            style={{ fontSize: "16px", padding: "12px 14px", borderRadius: "10px" }}
           />
 
           <FieldLabel>{isVi ? "Danh mục" : "Category"}</FieldLabel>
@@ -153,6 +158,7 @@ export function TransactionCard({
             className="field"
             value={draft.category}
             onChange={(event) => update("category", event.target.value)}
+            style={{ fontSize: "16px", padding: "12px 14px", borderRadius: "10px" }}
           >
             {categories[draft.type].map((category) => (
               <option key={category} value={category}>
@@ -168,6 +174,7 @@ export function TransactionCard({
             value={draft.description ?? ""}
             onChange={(event) => update("description", event.target.value)}
             placeholder={isVi ? "Để làm gì?" : "What was this for?"}
+            style={{ fontSize: "16px", padding: "12px 14px", borderRadius: "10px" }}
           />
 
           <FieldLabel>{isVi ? "Ngày tháng" : "Date"}</FieldLabel>
@@ -176,20 +183,21 @@ export function TransactionCard({
             type="date"
             value={draft.date}
             onChange={(event) => update("date", event.target.value)}
+            style={{ fontSize: "16px", padding: "12px 14px", borderRadius: "10px" }}
           />
 
-          <div style={{ display: "flex", gap: 7, paddingBottom: 12 }}>
+          <div style={{ display: "flex", gap: 7, paddingBottom: 12, flexDirection: "column" }}>
             <button
               className="button button-primary"
               onClick={() => setIsEditing(false)}
-              style={{ flex: 1, background: config.accent, padding: "8px 0" }}
+              style={{ flex: 1, background: config.accent, padding: "10px 0", minHeight: "40px", fontSize: "13px" }}
             >
               {isVi ? "Lưu thay đổi" : "Apply Changes"}
             </button>
             <button
               className="button button-ghost"
               onClick={resetDraft}
-              style={{ padding: "8px 14px" }}
+              style={{ padding: "10px 14px", minHeight: "40px", fontSize: "13px" }}
             >
               {isVi ? "Đặt lại" : "Reset"}
             </button>
@@ -216,18 +224,18 @@ export function TransactionCard({
       )}
 
       {isPending && (
-        <div className="tx-actions">
+        <div className="tx-actions" style={{ display: "flex", gap: 6, padding: "12px 16px", flexDirection: "column" }}>
             <button
               className="button button-primary"
               onClick={() => onConfirm(draft)}
-              style={{ flex: 1, background: config.accent, padding: "9px 0" }}
+              style={{ flex: 1, background: config.accent, padding: "11px 0", minHeight: "44px", fontSize: "13px", fontWeight: 600 }}
             >
               {isVi ? "Lưu giao dịch" : "Save Transaction"}
             </button>
             <button
               className="button button-ghost"
               onClick={onCancel}
-              style={{ padding: "9px 14px" }}
+              style={{ padding: "11px 14px", minHeight: "44px", fontSize: "13px", fontWeight: 600 }}
             >
               {isVi ? "Hủy" : "Discard"}
             </button>

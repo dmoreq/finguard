@@ -51,6 +51,7 @@ export function ChatWorkspace() {
   const [formTx, setFormTx] = useState<Transaction | null | undefined>(undefined);
   const [dataError, setDataError] = useState<string | null>(null);
   const [lastUserMessage, setLastUserMessage] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"chat" | "dashboard" | "transactions" | "settings">("chat");
   const chatRef = useRef<HTMLDivElement | null>(null);
   const transactionsRef = useRef(transactions);
 
@@ -277,34 +278,43 @@ export function ChatWorkspace() {
           <button
             className={`button header-button ${sidebarOpen ? "button-primary" : "button-ghost"}`}
             onClick={() => setSidebarOpen((current) => !current)}
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
           >
             {sidebarOpen ? (isVi ? "Ẩn báo cáo" : "Hide Overview") : isVi ? "Báo cáo" : "Overview"}
           </button>
           <button
             className={`button header-button ${txPanelOpen ? "button-primary" : "button-ghost"}`}
             onClick={() => setTxPanelOpen((current) => !current)}
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
           >
             {isVi ? "Giao dịch" : "Transactions"}
           </button>
           <button
             className="button button-ghost header-button"
             onClick={() => void handleClearChat()}
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
           >
             Clear chat
           </button>
           <button
             className="button button-ghost header-button"
             onClick={() => void handleClearTransactions()}
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
           >
             Clear txs
           </button>
-          <a className="button button-ghost header-button" href="/settings">
+          <a
+            className="button button-ghost header-button"
+            href="/settings"
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
+          >
             Settings
           </a>
           <a
             className="button button-ghost header-button"
             href="/api/transactions/export"
             download="finguard-transactions.csv"
+            style={{ display: window.innerWidth <= 768 ? "none" : "flex" }}
           >
             Export CSV
           </a>
@@ -324,8 +334,8 @@ export function ChatWorkspace() {
         </p>
       )}
 
-      <main className="workspace">
-        <section className="chat-pane">
+      <main className="workspace mobile-tabs">
+        <section className={`chat-pane ${mobileTab === "chat" ? "active" : ""}`}>
           <div ref={chatRef} className="chat-scroll">
             {messages.length <= 1 && confirmedCount === 0 && (
               <output className="empty-hint">
@@ -354,7 +364,7 @@ export function ChatWorkspace() {
           </div>
           <InputBar disabled={loading} onSend={handleSend} placeholder={inputPlaceholder(locale)} />
         </section>
-        {txPanelOpen && (
+        <section className={`transaction-list ${mobileTab === "transactions" ? "active" : ""}`} style={{ flex: 1 }}>
           <TransactionListPanel
             transactions={transactions}
             locale={locale}
@@ -367,16 +377,15 @@ export function ChatWorkspace() {
               await refreshTransactions();
             }}
           />
-        )}
-        {sidebarOpen && (
+        </section>
+        <section className={`dashboard ${mobileTab === "dashboard" ? "active" : ""}`} style={{ flex: 1 }}>
           <DashboardPanel
             transactions={transactions}
             locale={locale}
             currency={currency}
-            onClose={() => setSidebarOpen(false)}
+            onClose={() => setMobileTab("chat")}
           />
-        )}
-      </main>
+        </section>
       {formTx !== undefined && (
         <TransactionFormModal
           locale={locale}
@@ -398,6 +407,35 @@ export function ChatWorkspace() {
           }}
         />
       )}
+
+      {/* Mobile Navigation */}
+      <nav className="mobile-nav active">
+        <button
+          className={`nav-item ${mobileTab === "chat" ? "active" : ""}`}
+          onClick={() => setMobileTab("chat")}
+        >
+          <span className="nav-icon">💬</span>
+          <span>{isVi ? "Chat" : "Chat"}</span>
+        </button>
+        <button
+          className={`nav-item ${mobileTab === "dashboard" ? "active" : ""}`}
+          onClick={() => setMobileTab("dashboard")}
+        >
+          <span className="nav-icon">📊</span>
+          <span>{isVi ? "Báo cáo" : "Overview"}</span>
+        </button>
+        <button
+          className={`nav-item ${mobileTab === "transactions" ? "active" : ""}`}
+          onClick={() => setMobileTab("transactions")}
+        >
+          <span className="nav-icon">📝</span>
+          <span>{isVi ? "Giao dịch" : "Txs"}</span>
+        </button>
+        <a className="nav-item" href="/settings" style={{ textDecoration: "none" }}>
+          <span className="nav-icon">⚙️</span>
+          <span>{isVi ? "Cài đặt" : "Settings"}</span>
+        </a>
+      </nav>
     </div>
   );
 }
