@@ -12,12 +12,12 @@ How we test Finguard: right layer, TDD for new behavior, golden contracts at bou
 
 | Layer | Tool | CI |
 |-------|------|-----|
-| Frontend unit | Vitest (~67 tests) | `pnpm test` |
-| Backend unit + DB | pytest (~73 tests) | `uv run pytest tests/` |
+| Frontend unit | Vitest (~95 tests) | `pnpm test` |
+| Backend unit + DB | pytest (~108 tests) | `uv run pytest tests/` |
 | Coverage report | [TEST_COVERAGE_REPORT.md](./TEST_COVERAGE_REPORT.md) | `make test-coverage` |
 | Chat integration | `tests/test_chat/*`, `smoke-e2e.sh` | `make smoke` |
 | Contract | Golden JSON + [chat-payloads.json](./schemas/chat-payloads.json) | Vitest |
-| Browser E2E | Playwright (7 specs) | [e2e-nightly.yml](../.github/workflows/e2e-nightly.yml) (daily + manual) |
+| Browser E2E | Playwright (10 specs) | [e2e-nightly.yml](../.github/workflows/e2e-nightly.yml) (daily + manual) |
 | Hybrid router eval | `scripts/spike_router.py` | [router-eval.yml](../.github/workflows/router-eval.yml) (weekly + manual) |
 
 ### Pyramid

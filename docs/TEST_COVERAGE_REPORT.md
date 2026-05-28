@@ -11,9 +11,9 @@ This report describes **what is tested**, **what is not**, and **recommended nex
 
 | Area | Tests | Line coverage | Verdict |
 |------|-------|---------------|---------|
-| **Backend** (`actions/`) | 63+ pytest | **~79%** | Strong for record/confirm; improved for reports after CP-2 tests |
-| **Frontend** (Vitest, `.ts` only) | 67 | **~81%** | Strong on BFF/mappers; **React `.tsx` not in Vitest scope** |
-| **E2E** (Playwright) | 7 specs | Not in % | Critical journeys locally; not in default CI |
+| **Backend** (`actions/`) | 108 pytest | **~87%** | Strong record/confirm/reports; delete service fully covered |
+| **Frontend** (Vitest, `.ts` only) | 95 | **~93%** (`financial-data`, `format`) | Strong BFF/mappers; **React `.tsx` not in Vitest scope** |
+| **E2E** (Playwright) | 10 specs | Not in % | CP-1/2/3 + income + balance chat; keyword router in CI webServer |
 
 Coverage percentages are useful but **understate UI risk**: Vitest only instruments `src/**/*.ts`, not components.
 
@@ -27,11 +27,12 @@ make test-coverage
 # Or separately:
 cd backend && uv run pytest tests/ -q --cov=actions --cov-report=term-missing
 cd frontend && pnpm test:coverage
+make test-e2e
 ```
 
 ---
 
-## Backend (~79% lines)
+## Backend (~87% lines)
 
 ### Well covered
 
@@ -39,27 +40,21 @@ cd frontend && pnpm test:coverage
 |--------|--------|
 | `factory.py`, `routing/composite.py`, `router.py` | Composition and facade |
 | `session_store.py`, `webhook.py` | SQLite sessions + integration |
-| `record_transaction.py` | Record → pending |
+| `record_transaction.py`, `delete_transaction.py` | Record → pending; discard service |
 | `queries.py` | SQL layer |
 | `routing/keyword.py`, `pending.py` | Intent + pending guard |
-
-### Historically weak (addressed in CP-2 test batch)
-
-| Module | Gap | Mitigation |
-|--------|-----|------------|
-| `get_balance.py` | Service unit tests | `test_services/test_reports.py` |
-| `query_spending.py` | Service unit tests | Same |
-| `list_transactions.py` | Service + webhook tests | Same + `test_webhook_reports.py` |
+| `extraction/period.py` | Period/category/trend hints (`test_extraction/test_period.py`) |
+| `get_balance.py`, `query_spending.py`, `list_transactions.py` | CP-2 services + webhook integration |
 
 ### Still under-covered
 
 | Module | Cover (approx.) | Notes |
 |--------|-----------------|--------|
 | `extraction/gemini.py` | ~37% | Mocked only; no live Gemini in CI |
-| `routing/semantic.py` | ~65% | Real embeddings; CI uses `ROUTER_MODE=keyword` |
-| `delete_transaction.py` | ~56% | Discard — E2E exists |
+| `routing/semantic.py` | ~65% | Real embeddings; CI/E2E use `ROUTER_MODE=keyword` |
 | `dialogue/handlers/pending.py` | ~74% | Edit branches |
 | `dialogue/collector.py` | ~68% | LLM error paths |
+| `server.py` | ~70% | Backup restore edge paths |
 
 ### Acceptable zero coverage
 
@@ -70,26 +65,27 @@ cd frontend && pnpm test:coverage
 
 ---
 
-## Frontend (~81% statements, TS only)
+## Frontend (~93% statements, TS only)
 
-Vitest config: `include: ["src/**/*.ts"]` — **no `.tsx`**.
+Vitest config: `include: ["src/**/*.test.ts"]`, coverage on `src/**/*.ts` — **no `.tsx`**.
 
 ### Well covered
 
 - `server/chat/*` — mappers, schemas, rate-limit (~99%)
-- `app/api/data/*`, export routes (100%)
-- `features/reports/finance-calculations.ts` (~97%)
+- `app/api/data/*`, export routes, backup proxy (100%)
+- `features/reports/finance-calculations.ts` (~93%)
+- `lib/format.ts` (~95%) — **new** `format.test.ts`
+- `lib/data/financial-data.ts` (~92%) — CRUD, backup, chat persistence tests expanded
+- `/api/chat` — proxy, errors, **429 rate-limit branch**
 
 ### Gaps
 
 | Area | Notes |
 |------|--------|
-| `lib/format.ts` | 0% — display helpers |
-| `lib/data/financial-data.ts` | ~53% — fetch/hydration |
 | All `.tsx` UI | Playwright only |
-| `/api/chat` rate-limit branch | Partial |
+| `features/auth/useSession.ts` | Trivial; excluded from coverage paths |
 
-Vitest thresholds: 70% lines/functions, 60% branches (currently passing).
+Vitest thresholds: 70% lines/functions, 60% branches (passing with headroom).
 
 ---
 
@@ -98,21 +94,22 @@ Vitest thresholds: 70% lines/functions, 60% branches (currently passing).
 | ID | Journey | Unit/integration | E2E |
 |----|---------|------------------|-----|
 | CP-1 | Record → confirm | Strong | `confirm-transaction.spec.ts` |
-| CP-2 | Balance / spending | **CP-2 tests added** | Partial |
+| CP-2 | Balance / spending | Strong | `balance-report.spec.ts` (dashboard + chat balance) |
 | CP-3 | Discard pending | Medium | `discard-transaction.spec.ts` |
 | CP-4 | Hydrate on load | Partial | Implicit |
 | CP-5 | Settings profile | Strong | `settings-profile.spec.ts` |
 | CP-6 | CSV export | Strong | `export-csv.spec.ts` |
+| — | Record income | Service + router | `record-income.spec.ts` |
 
 ---
 
-## P1/P2 features
+## E2E reliability notes
 
-| Feature | Test approach |
-|---------|----------------|
-| Hybrid semantic router | Mocked; utterance bank runs in keyword mode in CI |
-| Gemini extract | `test_extract_composite` (mocked) |
-| SQLite sessions | `test_session_persist`, `test_chat_sessions` |
+Playwright webServer (`scripts/playwright-webserver.sh`):
+
+- Forces `ROUTER_MODE=keyword` (preserved over `backend/.env` hybrid default)
+- Resets `backend/data/playwright-e2e.db` each run
+- Restarts uvicorn so env/DB apply (does not reuse `make dev` backend)
 
 ---
 
@@ -120,7 +117,8 @@ Vitest thresholds: 70% lines/functions, 60% branches (currently passing).
 
 1. Optional CI job on pull requests for Playwright (currently nightly only).
 2. Track coverage on PRs touching `actions/chat/` or `actions/services/`.
-3. Include key `.tsx` in Vitest or expand E2E for income recording.
+3. Include key `.tsx` in Vitest or expand E2E for edit-pending flow.
+4. API to reset chat session when clearing transactions (avoids stale pending state in long E2E runs).
 
 ---
 
