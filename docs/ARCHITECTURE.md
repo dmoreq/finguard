@@ -49,12 +49,12 @@ Entry points: `chat/webhook.py` → `factory.create_dialogue_engine()` · `chat/
 
 ### Current vs target
 
-| Layer | Shipped | Target / backlog |
-|-------|---------|------------------|
-| 1 | Keyword router | Semantic Router — [ROADMAP P1](./ROADMAP.md) |
-| 2 | `engine.py` | **Burr** — [ROADMAP P3](./ROADMAP.md#burr-backlog-detail) |
-| 3 | Rules | Outlines + Gemini (fallback) — [ROADMAP P2](./ROADMAP.md) |
-| 4 | SQLite + services | + **DuckDB** for analytics — [ROADMAP P4](./ROADMAP.md#duckdb-backlog-detail) |
+| Layer | Shipped | Backlog |
+|-------|---------|---------|
+| 1 | Hybrid semantic + keyword router (`routing/`) | Tune thresholds; more routes |
+| 2 | `DialogueEngine` + handlers | **Burr** — [ROADMAP P3](./ROADMAP.md#burr-backlog-detail) |
+| 3 | Rules + optional Gemini JSON extract | Outlines lib optional |
+| 4 | SQLite + services + `chat_sessions` | **DuckDB** — [ROADMAP P4](./ROADMAP.md#duckdb-backlog-detail) |
 
 See [ADR-004](./decisions/004-chat-backend-evolution.md).
 

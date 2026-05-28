@@ -16,7 +16,18 @@ make setup
 Edit:
 
 - `frontend/.env.local` — `CHAT_BACKEND_URL=http://127.0.0.1:5055`
-- `backend/.env` — optional `GEMINI_API_KEY`
+- `backend/.env` — copy from `backend/.env.example`
+
+**Backend chat options** (`backend/.env`):
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ROUTER_MODE` | `hybrid` | `keyword`, `semantic`, or `hybrid` (first hybrid run may download FastEmbed model) |
+| `SEMANTIC_ROUTER_THRESHOLD` | `0.72` | Minimum similarity for semantic intent |
+| `LLM_EXTRACT_ENABLED` | `false` | Set `true` + `GEMINI_API_KEY` for LLM slot fill |
+| `CI_NO_SEMANTIC` | — | Set in CI to skip embedding-based accuracy test |
+
+**Note:** Server dialogue state is stored in SQLite (`chat_sessions`). Browser chat history remains in `localStorage` only.
 
 ## Run
 

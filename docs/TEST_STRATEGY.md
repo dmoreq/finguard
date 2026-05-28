@@ -76,7 +76,9 @@ flowchart LR
 
 | Area | Tests | Notes |
 |------|-------|-------|
-| `test_chat/test_router.py` | Intent + utterance bank | ≥85% accuracy on fixtures |
+| `test_chat/test_router.py` | Intent + utterance bank | ≥85% with `ROUTER_MODE=keyword` (CI default) |
+| `test_chat/test_router_semantic.py` | Semantic router (mocked backend) | No model download |
+| `test_chat/test_session_persist.py` | SQLite session + confirm flow | |
 | `test_chat/test_webhook.py` | Webhook payloads | |
 | `test_chat/test_confirm_webhook.py` | Record → confirm | SQLite integration |
 | `test_services/` | Service layer | DB fixtures |
@@ -141,4 +143,5 @@ make smoke             # backend + webhook smoke
 - Playwright in CI (nightly or on `workflow_dispatch`)
 - Auth tests when Supabase returns
 - k6 load tests for `/api/chat` rate limits
-- When [ROADMAP](./ROADMAP.md) items land: router accuracy suite (semantic-router), Burr transition tests, DuckDB report benchmarks
+- Burr transition tests and DuckDB report benchmarks when P3/P4 land
+- Local hybrid router eval: `ROUTER_MODE=hybrid uv run pytest tests/test_chat/test_router.py::test_utterance_bank_accuracy`
