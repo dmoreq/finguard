@@ -29,7 +29,7 @@ Chat history for the UI is stored in **browser localStorage**. Transactions and 
 | Component | Path | Role |
 |-----------|------|------|
 | Frontend | `frontend/` | UI, BFF routes, payload mapping |
-| Chat package | `backend/actions/chat/` | Intent router, dialogue engine, webhook |
+| Chat package | `backend/actions/chat/` | Layered chat: `domain/`, `routing/`, `extraction/`, `dialogue/`, `factory.py` |
 | Services | `backend/actions/services/` | Record, confirm, reports (business logic) |
 | Data API | `backend/actions/server.py` | FastAPI app |
 | Database | `backend/actions/db/` | Schema, queries, migrations via bootstrap |
@@ -38,10 +38,12 @@ Chat history for the UI is stored in **browser localStorage**. Transactions and 
 
 | Layer | Module | Role |
 |-------|--------|------|
-| 1 — Routing | `chat/router.py` | Keyword/regex intent (no LLM) |
-| 2 — Dialogue | `chat/engine.py` | FSM: collect → pending card → confirm / discard / edit |
-| 3 — Extraction | `chat/extract/rules.py` | Amount, category, period from text |
+| 1 — Routing | `chat/routing/` (`CompositeIntentRouter`) | Pending guard → keyword classifier (semantic in P1) |
+| 2 — Dialogue | `chat/dialogue/` (`DialogueEngine`) | Handlers: pending, collecting, intent dispatch |
+| 3 — Extraction | `chat/extraction/` (`RulesFieldExtractor`) | Amount, category, period from text |
 | 4 — Data | `services/*` | SQLite writes/reads; [webhook payloads](./schemas/chat-payloads.json) |
+
+Entry points: `chat/webhook.py` → `factory.create_dialogue_engine()` · `chat/session_store.py` for sessions.
 
 `GEMINI_API_KEY` is optional for future Outlines-based extraction; rules work without it.
 

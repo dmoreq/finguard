@@ -10,24 +10,21 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
-
     # Local database
     "aiosqlite>=0.20",
-
     # HTTP
     "httpx>=0.28",
-
     # Logging
     "loguru>=0.7",
-
     # DateTime
     "pendulum>=3.0",
-
     # Resilience
     "tenacity>=9.0",
-
     # Config
     "python-dotenv>=1.0",
+    "semantic-router>=0.1.11",
+    "google-generativeai>=0.8",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
