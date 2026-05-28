@@ -8,6 +8,9 @@ This document tracks **planned** chat-backend and data-layer work.
 - **Target design:** [design/chat-backend-target.md](./design/chat-backend-target.md)
 - **Decisions:** [ADR-003](./decisions/003-low-cost-chat-backend.md), [ADR-004](./decisions/004-chat-backend-evolution.md)
 - **Implementation log:** [plans/P1-P2-implementation-plan.md](./plans/P1-P2-implementation-plan.md)
+- **Product priorities:** [PRODUCT_PLAN.md](./PRODUCT_PLAN.md)
+- **Use case catalog:** [USE_CASE_CATALOG.md](./USE_CASE_CATALOG.md)
+- **Feature specs (RFCs):** [specs/README.md](./specs/README.md) — one file per feature for build/defer/reject review
 
 ---
 
