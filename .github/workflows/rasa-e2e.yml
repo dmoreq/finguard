@@ -1,0 +1,23 @@
+name: Rasa E2E
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  rasa-e2e:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.RASA_PRO_LICENSE != '' }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Run Rasa e2e with stubbed actions
+        env:
+          RASA_PRO_LICENSE: ${{ secrets.RASA_PRO_LICENSE }}
+          RASA_PRO_BETA_STUB_CUSTOM_ACTION: "true"
+        run: docker compose run --rm rasa test e2e tests/
