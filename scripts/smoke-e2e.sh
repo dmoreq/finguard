@@ -57,4 +57,10 @@ echo "$RESP" | grep -q 'transaction_pending\|"text"' || {
 
 echo "    OK: Rasa webhook responded"
 docker compose down
+
+if curl -sf http://127.0.0.1:3000/chat >/dev/null 2>&1; then
+  echo "==> integration chat (Next on :3000)"
+  "$ROOT/scripts/integration-chat.sh"
+fi
+
 echo "==> smoke done"

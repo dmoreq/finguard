@@ -47,6 +47,15 @@ test: ## Vitest + pytest
 	pnpm --dir $(FRONTEND) test
 	cd $(BACKEND) && uv run pytest tests/ -q
 
+test-coverage: ## Unit tests with coverage reports
+	pnpm --dir $(FRONTEND) test:coverage
+	cd $(BACKEND) && uv run pytest tests/ -q --cov=actions --cov-report=term-missing
+
+test-e2e: ## Playwright browser tests (starts mock stack)
+	chmod +x scripts/playwright-webserver.sh
+	cd $(FRONTEND) && pnpm exec playwright install chromium
+	cd $(FRONTEND) && pnpm test:e2e
+
 lint: ## Biome + ruff
 	pnpm --dir $(FRONTEND) exec biome check src/
 	cd $(BACKEND) && uv run ruff check actions tests

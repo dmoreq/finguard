@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -15,11 +18,14 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@biomejs/biome": "^1.9.4",
     "@next/swc-darwin-arm64": "16.2.6",
+    "@playwright/test": "^1.52.0",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@vitest/coverage-v8": "^3.2.4",
     "typescript": "latest",
     "vitest": "^3.2.4"
   },
