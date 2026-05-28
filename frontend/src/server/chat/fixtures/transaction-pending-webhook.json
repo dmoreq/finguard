@@ -1,0 +1,16 @@
+[
+  {
+    "custom": {
+      "type": "transaction_pending",
+      "text": "Got it — $18.00 for Dining.",
+      "transaction": {
+        "id": "tx-pending-99",
+        "type": "expense",
+        "amount": 18,
+        "category": "dining",
+        "description": "lunch",
+        "date": "2026-05-28"
+      }
+    }
+  }
+]

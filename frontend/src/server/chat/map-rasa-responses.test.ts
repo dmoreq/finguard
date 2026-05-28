@@ -58,4 +58,54 @@ describe("mapRasaWebhookToChatResponse", () => {
     expect(result.messages[0]?.type).toBe("text");
     expect(result.messages[0]?.content).toContain("help");
   });
+
+  it("maps transaction_list custom type to text", () => {
+    const result = mapRasaWebhookToChatResponse([
+      {
+        custom: {
+          type: "transaction_list",
+          text: "**Recent:** $5 coffee",
+        },
+      },
+    ]);
+    expect(result.messages[0]).toEqual({
+      type: "text",
+      content: "**Recent:** $5 coffee",
+    });
+  });
+
+  it("skips invalid transaction_pending payloads", () => {
+    const result = mapRasaWebhookToChatResponse([
+      {
+        custom: {
+          type: "transaction_pending",
+          transaction: { id: "x", type: "invalid", amount: 0, category: "", date: "x" },
+        },
+      },
+    ]);
+    expect(result.messages[0]?.content).toContain("help");
+  });
+
+  it("maps multiple webhook items in order", () => {
+    const result = mapRasaWebhookToChatResponse([
+      { text: "First" },
+      {
+        custom: {
+          type: "transaction_pending",
+          text: "Pending",
+          transaction: {
+            id: "t2",
+            type: "expense",
+            amount: 3,
+            category: "misc",
+            description: null,
+            date: "2026-05-15",
+          },
+        },
+      },
+    ]);
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0]?.type).toBe("text");
+    expect(result.messages[1]?.type).toBe("transaction");
+  });
 });

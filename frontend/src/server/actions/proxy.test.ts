@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getActionsUrl, proxyToActions } from "./proxy";
+import { getActionsUrl, mirrorActionsResponse, proxyToActions } from "./proxy";
 
 describe("getActionsUrl", () => {
   it("uses ACTIONS_URL when set", () => {
@@ -25,5 +25,24 @@ describe("proxyToActions", () => {
     expect(body.error?.code).toBe("ACTIONS_UNAVAILABLE");
 
     vi.mocked(globalThis.fetch).mockRestore();
+  });
+});
+
+describe("mirrorActionsResponse", () => {
+  it("preserves status and content type", async () => {
+    const upstream = new Response('{"ok":true}', {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
+    const mirrored = await mirrorActionsResponse(upstream);
+    expect(mirrored.status).toBe(201);
+    expect(await mirrored.json()).toEqual({ ok: true });
+  });
+
+  it("mirrors non-JSON upstream bodies", async () => {
+    const upstream = new Response("plain", { status: 502 });
+    const mirrored = await mirrorActionsResponse(upstream);
+    expect(mirrored.status).toBe(502);
+    expect(await mirrored.text()).toBe("plain");
   });
 });

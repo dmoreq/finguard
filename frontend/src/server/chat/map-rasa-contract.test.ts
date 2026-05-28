@@ -29,4 +29,25 @@ describe("Rasa webhook golden fixtures", () => {
       expect(result.messages[0].reportData?.topCategory).toBe("Food");
     }
   });
+
+  it("maps transaction-pending golden fixture", () => {
+    const result = mapRasaWebhookToChatResponse(loadFixture("transaction-pending-webhook.json"));
+    expect(result.messages[0]?.type).toBe("transaction");
+    if (result.messages[0]?.type === "transaction") {
+      expect(result.messages[0].transaction.amount).toBe(18);
+      expect(result.messages[0].transaction.category).toBe("dining");
+    }
+  });
+
+  it("maps text-only golden fixture", () => {
+    const result = mapRasaWebhookToChatResponse(loadFixture("text-only-webhook.json"));
+    expect(result.messages[0]?.type).toBe("text");
+    expect(result.messages[0]?.content).toContain("Mock Rasa");
+  });
+
+  it("falls back when custom transaction payload is invalid", () => {
+    const result = mapRasaWebhookToChatResponse(loadFixture("invalid-payload-webhook.json"));
+    expect(result.messages[0]?.type).toBe("text");
+    expect(result.messages[0]?.content).toContain("help");
+  });
 });

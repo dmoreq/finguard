@@ -1,0 +1,14 @@
+[
+  {
+    "custom": {
+      "type": "transaction_pending",
+      "transaction": {
+        "id": "bad",
+        "type": "not-valid",
+        "amount": -5,
+        "category": "",
+        "date": "bad"
+      }
+    }
+  }
+]
