@@ -2,9 +2,9 @@
 
 **Audience:** QA/QC, engineering
 **Last reviewed:** 2026-05-28
-**Scope:** Monorepo (`frontend/`, `backend/`, `backend/rasa/`, `scripts/`, CI)
+**Scope:** Monorepo (`frontend/`, `backend/`, `scripts/`, CI)
 
-This document is the master plan to cover **every meaningful behavior** with the right test type. It follows TDD (red → green → refactor) for new work and extends existing Vitest, pytest, and Rasa e2e coverage.
+This document is the master plan to cover **every meaningful behavior** with the right test type. It follows TDD (red → green → refactor) for new work and extends Vitest and pytest coverage (chat router, FSM, services).
 
 ---
 
@@ -16,8 +16,8 @@ This document is the master plan to cover **every meaningful behavior** with the
 |-------|------|-------------|-----|
 | Frontend unit | Vitest | **65** (16 files) | ✅ `pnpm test` |
 | Backend unit + DB | pytest | **63** (~15 modules) | ✅ `uv run pytest` |
-| Rasa CALM e2e | `rasa test e2e` (YAML) | **5** core + **4** flow files | ⭕ manual / `workflow_dispatch` |
-| Integration | shell + pytest | `integration-chat.sh`, `test_mock_rasa.py`, confirm SQLite | ⭕ smoke when Next up |
+| Chat integration | pytest + shell | `test_chat/*`, `integration-chat.sh`, `smoke-e2e.sh` | ✅ via `make smoke` |
+| Integration | shell + pytest | record→confirm webhook, SQLite | ⭕ smoke when Next up |
 | Browser E2E | Playwright | **7** specs | ⭕ `make test-e2e` locally |
 | Contract / schema | golden JSON fixtures | **5** fixture-driven tests | ✅ via Vitest |
 

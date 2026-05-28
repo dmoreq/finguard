@@ -68,7 +68,7 @@ export default function SettingsPage() {
       <main className="settings-main">
         <h1>Profile settings</h1>
         <p className="settings-note">
-          Stored locally in SQLite. Used by Rasa for currency and timezone on reports.
+          Stored locally in SQLite. Used by the assistant for currency and timezone on reports.
         </p>
         <form className="settings-form" onSubmit={handleSave}>
           <label className="login-label" htmlFor="displayName">

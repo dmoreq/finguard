@@ -34,14 +34,12 @@ out/
 *.tsbuildinfo
 .pnpm-store/
 
-# Stray Rasa cache at repo root (not backend/rasa/)
+# Stray cache at repo root
 /rasa/
 
-# ─── Rasa CALM ───────────────────────────────────────────────────
-backend/rasa/models/
-backend/.rasa_cache/
+# ─── Backend local data ──────────────────────────────────────────
+backend/data/*.db
 backend/logs/
-backend/litellm/logs/
 
 # ─── Docker (local overrides only) ───────────────────────────────
 docker-compose.override.yml

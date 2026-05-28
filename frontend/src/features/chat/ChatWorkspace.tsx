@@ -180,7 +180,7 @@ export function ChatWorkspace() {
       try {
         await updateChatMessageTxStatus(messageId, "confirmed");
       } catch {
-        // Rasa is source of truth for transaction status
+        // Backend is source of truth for transaction status
       }
     }
 
