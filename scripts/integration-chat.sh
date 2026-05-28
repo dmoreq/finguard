@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# INT-B: Next /api/chat with mock Rasa (requires Next on :3000 and mock on :5005).
+# INT-B: Next /api/chat with local backend (requires Next on :3000, backend on :5055).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RASA_URL="${RASA_URL:-http://127.0.0.1:5005}"
+CHAT_URL="${CHAT_BACKEND_URL:-${RASA_URL:-http://127.0.0.1:5055}}"
 NEXT_URL="${NEXT_URL:-http://localhost:3000}"
 
-echo "==> Rasa ${RASA_URL}"
-curl -sf "${RASA_URL}/status" >/dev/null || {
-  echo "Start mock Rasa: uv run python scripts/mock-rasa.py"
+echo "==> Chat backend ${CHAT_URL}"
+curl -sf "${CHAT_URL}/health" >/dev/null || {
+  echo "Start backend: make dev"
   exit 1
 }
 
