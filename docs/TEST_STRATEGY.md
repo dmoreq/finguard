@@ -10,16 +10,23 @@ This document is the master plan to cover **every meaningful behavior** with the
 
 ## 1. Executive summary
 
-### Current state
+### Current state (implemented)
 
 | Layer | Tool | Tests today | CI |
 |-------|------|-------------|-----|
-| Frontend unit | Vitest | **23** (9 files) | ✅ `pnpm test` |
-| Backend unit | pytest + mocks | **36** (~8 modules) | ✅ `uv run pytest` |
-| Rasa CALM e2e | `rasa test e2e` (YAML) | **5** cases + stubs | ⭕ manual (`scripts/rasa-e2e-docker.sh`) |
-| Integration | shell smoke | partial (`smoke-e2e.sh`) | ⭕ not in CI |
-| Browser E2E | — | **0** | ⭕ |
-| Contract / schema | golden JSON fixtures | **2** fixture tests | ✅ via Vitest |
+| Frontend unit | Vitest | **65** (16 files) | ✅ `pnpm test` |
+| Backend unit + DB | pytest | **63** (~15 modules) | ✅ `uv run pytest` |
+| Rasa CALM e2e | `rasa test e2e` (YAML) | **5** core + **4** flow files | ⭕ manual / `workflow_dispatch` |
+| Integration | shell + pytest | `integration-chat.sh`, `test_mock_rasa.py`, confirm SQLite | ⭕ smoke when Next up |
+| Browser E2E | Playwright | **7** specs | ⭕ `make test-e2e` locally |
+| Contract / schema | golden JSON fixtures | **5** fixture-driven tests | ✅ via Vitest |
+
+**Coverage (latest run):**
+
+| Package | Line coverage | Command |
+|---------|---------------|---------|
+| `actions/` | **89%** | `cd backend && uv run pytest tests/ --cov=actions --cov-report=term-missing` |
+| `frontend/src` (instrumented) | **~81%** statements | `cd frontend && pnpm test:coverage` |
 
 ### Target pyramid (steady state)
 
@@ -86,10 +93,10 @@ flowchart LR
 | **Unit** | Small (ms) | Pure functions, handler logic with mocked DB | Vitest, pytest, `@vitest/mocker`, `unittest.mock` |
 | **Contract** | Small | Stable JSON shapes (Rasa custom payloads, API errors) | Vitest + `fixtures/*.json`, optional JSON Schema |
 | **API integration** | Medium (s) | Real SQLite / TestClient, no browser | `httpx`/`TestClient`, temp DB file |
-| **Service integration** | Medium | Next route → real actions on localhost | Vitest + `ensure-local-backend` or testcontainers |
+| **Service integration** | Medium | Next route → real actions on localhost | Vitest + mocked proxy; `scripts/integration-chat.sh` |
 | **Rasa e2e** | Medium–Large | Flow routing, slot collection, assertions | `backend/rasa/tests/*.yml`, stub custom actions |
 | **Smoke** | Medium | “Stack boots” after deploy/dev | `scripts/smoke-e2e.sh`, `check-health.sh` |
-| **Browser E2E** | Large | Full UX, a11y, regressions | Playwright (to add) |
+| **Browser E2E** | Large | Full UX, a11y, regressions | Playwright (`frontend/tests/e2e/`) |
 | **Non-functional** | Large | Rate limits, load, security | k6 optional; OWASP ZAP optional |
 
 **TDD rule:** For every bug in production, add a **failing** test at the lowest layer that can catch it, then fix.
@@ -102,364 +109,114 @@ flowchart LR
 
 | Module / behavior | Covered? | Existing tests | Priority gaps |
 |-------------------|----------|----------------|---------------|
-| `map-rasa-responses.ts` | Partial | `map-rasa-responses.test.ts`, contract fixtures | `transaction_list`, malformed custom, empty array |
-| `map-rasa-report-data.ts` | Partial | `map-rasa-report-data.test.ts` | Missing fields, wrong types |
-| `map-api-messages.ts` | ❌ | — | transaction/report/error mapping, fallback `computeReportData` |
-| `schemas.ts` / `parseChatRequest` | ❌ | — | invalid body, empty message, max length |
-| `rate-limit.ts` | ❌ | — | window reset, 429 on `/api/chat` |
-| `resolve-user.ts` | Minimal | `resolve-user.test.ts` | `getRasaUrl` empty/whitespace |
-| `actions/proxy.ts` | Partial | `proxy.test.ts` | `mirrorActionsResponse`, non-JSON upstream |
-| `/api/chat` route | Partial | `route.test.ts` | Rasa 4xx/5xx body, timeout, invalid JSON |
-| `/api/data/transactions` | Partial | route mock test | integration with TestClient + mock upstream |
-| `/api/data/profile` | ❌ | — | GET/PATCH proxy, 503 path |
-| `/api/transactions/export` | ❌ | — | CSV escaping, empty list, 503 |
-| `financial-data.ts` | ❌ | — | `parseActionsError`, fetch paths (jsdom fetch mock) |
-| `chat-storage.ts` | ❌ | — | corrupt JSON, SSR guard, round-trip |
-| `categories.ts` | ✅ | `categories.test.ts` | edge slugs |
-| ~~`map-db-row.ts`~~ | Removed | — | Was Supabase-only; deleted in cleanup |
-| `finance-calculations.ts` | ❌ | — | month filter, savings rate, pending, invalid dates |
-| `ChatWorkspace.tsx` | ❌ | — | Playwright only (too heavy for unit) |
-| `InputBar`, `MessageBubble` | ❌ | — | RTL optional; Playwright for a11y |
-| `DashboardPanel` / `ReportCard` | ❌ | — | snapshot or RTL with fixture data |
-| `settings/page.tsx` | ❌ | — | Playwright save flow |
-| `useSession.ts` | ❌ | — | always `local-user` today — trivial until auth |
+| `map-rasa-responses.ts` | ✅ | `map-rasa-responses.test.ts`, contract fixtures | generative rephrasing if enabled |
+| `map-rasa-report-data.ts` | ✅ | `map-rasa-report-data.test.ts` | — |
+| `map-api-messages.ts` | ✅ | `map-api-messages.test.ts` | — |
+| `schemas.ts` / `parseChatRequest` | ✅ | `schemas.test.ts` | max length if added |
+| `rate-limit.ts` | ✅ | `rate-limit.test.ts` | — |
+| `resolve-user.ts` | ✅ | `resolve-user.test.ts` | — |
+| `actions/proxy.ts` | ✅ | `proxy.test.ts` | — |
+| `/api/chat` route | ✅ | `route.test.ts` | timeout simulation |
+| `/api/data/transactions` | ✅ | route mock test | — |
+| `/api/data/profile` | ✅ | `profile/route.test.ts` | — |
+| `/api/transactions/export` | ✅ | `export/route.test.ts` | — |
+| `financial-data.ts` | Partial | `financial-data.test.ts` | full fetch integration |
+| `chat-storage.ts` | ✅ | `chat-storage.test.ts` | — |
+| `categories.ts` | ✅ | `categories.test.ts` | — |
+| `finance-calculations.ts` | ✅ | `finance-calculations.test.ts` | — |
+| `ChatWorkspace.tsx` | E2E | Playwright | RTL optional |
+| `InputBar`, `MessageBubble` | E2E | Playwright | — |
+| `DashboardPanel` / `ReportCard` | Partial | Playwright sidebar | dedicated RTL |
+| `settings/page.tsx` | ✅ | Playwright `settings-profile.spec.ts` | — |
+| `useSession.ts` | Trivial | — | until auth |
 
 ### 4.2 Backend actions (`backend/actions`)
 
 | Module / behavior | Covered? | Existing tests | Priority gaps |
 |-------------------|----------|----------------|---------------|
-| `handlers/record_transaction` | Partial | happy + invalid amount | income path, DB failure, slot validation edge cases |
-| `handlers/update_transaction` | Partial | confirm + no pending | edit flow partial updates, idempotent confirm |
-| `handlers/delete_transaction` | ✅ | 4 tests | — |
-| `handlers/query_spending` | ✅ | 4 tests | period variants via integration |
-| `handlers/get_balance` | ✅ | 3 tests | — |
-| `handlers/list_transactions` | ✅ | 4 tests | — |
-| `handlers/session_start` | ✅ | 5 tests | metadata vs slots precedence |
-| `utils/dates.py` | ✅ | 6 tests | all `query_period` values |
-| `utils/pending.py` | ✅ | 4 tests | — |
-| `utils/categories.py` | ❌ | — | normalize aliases, unknown → default |
-| `utils/formatting.py` | ❌ | — | currency formatting, summaries |
-| `db/queries.py` | ❌ | — | **critical:** integration tests with temp SQLite |
-| `db/schema.py` | ❌ | — | migration bootstrap idempotent |
-| `db/client.py` | ❌ | — | path from env `FINGUARD_DB_PATH` |
-| `server.py` REST `/data/*` | Minimal | health only | GET/DELETE transactions, GET/PATCH profile, CORS |
-| `models/transaction.py` | ❌ | — | Pydantic validators |
+| `handlers/*` | ✅ | unit + `test_confirm_flow_integration.py` | edit-flow partial updates |
+| `utils/categories.py` | ✅ | `test_categories.py` | — |
+| `utils/formatting.py` | ✅ | `test_formatting.py` | — |
+| `db/queries.py` | ✅ | `test_db/test_queries.py` | edge periods |
+| `db/schema.py` | ✅ | via queries bootstrap | dedicated idempotent test |
+| `server.py` REST `/data/*` | ✅ | `test_server_data.py` | — |
+| `models/transaction.py` | Partial | via handlers | direct validator tests |
 
 ### 4.3 Rasa CALM (`backend/rasa`)
 
 | Flow / behavior | E2E case? | Notes |
 |-----------------|-----------|--------|
 | `record_expense` | ✅ | stub `action_record_transaction` |
-| `record_income` | ❌ | add case + stub |
+| `record_income` | ✅ | `tests/flows/test_record_income.yml` |
 | `confirm_pending_transaction` | ✅ | fixture `pending_transaction` |
 | `discard_pending_transaction` | ✅ | |
-| `edit_pending_transaction` | ❌ | multi-collect edit path |
+| `edit_pending_transaction` | ✅ | `tests/flows/test_edit_pending.yml` |
 | `no_pending_transaction` | ✅ | |
 | `query_spending_report` | ✅ | |
-| `get_balance` | ❌ | |
-| `list_recent_transactions` | ❌ | |
-| Slot rejections (amount ≤ 0) | ❌ | utter assertions |
+| `get_balance` | ✅ | `tests/flows/test_get_balance.yml` |
+| `list_recent_transactions` | ✅ | `tests/flows/test_list_transactions.yml` |
+| Slot rejections (amount ≤ 0) | ❌ | optional |
 | Pattern / out-of-scope | ❌ | optional |
-| Generative rephrasing | ❌ | `generative_response_is_*` if enabled |
 
-**E2E file:** `backend/rasa/tests/e2e_test_cases.yml`, `conftest.yml`
-**Run:** `RASA_PRO_BETA_STUB_CUSTOM_ACTION=true rasa test e2e` (see Rasa skill)
+**Run:** `RASA_PRO_BETA_STUB_CUSTOM_ACTION=true rasa test e2e` (see Rasa skill) or `.github/workflows/rasa-e2e.yml` when license secret is set.
 
 ### 4.4 Scripts & dev tooling
 
 | Script | Test approach |
 |--------|----------------|
-| `mock-rasa.py` | pytest or Vitest N/A — **add** `tests/test_mock_rasa.py` (HTTP against running server) or subprocess test |
+| `mock-rasa.py` | ✅ `tests/test_mock_rasa.py` (HTTP, `MOCK_RASA_PORT`) |
+| `integration-chat.sh` | manual / smoke when Next on :3000 |
+| `playwright-webserver.sh` | used by Playwright `webServer` |
 | `ensure-local-backend.sh` | CI smoke: ports come up |
-| `dev-lite.sh` | manual + health script |
 
 ---
 
-## 5. Detailed test specifications by layer
+## 5–9. (Specifications unchanged in spirit — see git history for full detail)
 
-### 5.1 Unit tests — frontend (Vitest)
-
-**File conventions:** colocate `*.test.ts` next to source or under `__tests__/`.
-
-#### `finance-calculations.test.ts` (P0)
-
-| Case | Input | Expected |
-|------|-------|----------|
-| Empty transactions | `[]` | zeros, `savingsRate: null` |
-| Income only | 1 income | net positive, savings rate 100% |
-| Expense only | 1 expense | net negative |
-| Pending excluded from month totals | pending + expense | pending in `pendingCount`, not in `totalExpenses` |
-| Invalid date string | bad `date` | row still counted (current behavior) or excluded — **document chosen rule** |
-| `projectedSpend` | known month/day | deterministic with injected `now` |
-
-#### `map-api-messages.test.ts` (P0)
-
-- Maps `transaction` API message → `ChatMessage` with `txStatus: pending_confirmation`
-- Maps `report` with and without `reportData`
-- Maps `error` type
-- Falls back to `computeReportData(transactions)` when report has no data
-
-#### `financial-data.test.ts` (P1)
-
-- Mock `fetch`: `/api/data/transactions` success → mapped `Transaction[]`
-- 503 with `ACTIONS_UNAVAILABLE` → thrown message contains `make dev`
-- `clearAllTransactions` calls DELETE
-
-#### `rate-limit.test.ts` (P1)
-
-- 60 requests allowed per minute per user
-- 61st returns `allowed: false` with `retryAfterSec`
-- New window after 60s (fake timers)
-
-#### `schemas.test.ts` (P1)
-
-- `parseChatRequest`: missing message, non-string, whitespace-only → throw `Invalid...`
-
-#### Extend `map-rasa-responses.test.ts` (P1)
-
-- `transaction_pending` with `type: expense` vs invalid type skipped
-- `transaction_list` custom type
-- Multiple items in one webhook
-- Default fallback message when empty
-
-#### Extend `route.test.ts` for `/api/chat` (P0)
-
-- Rasa returns 500 → 503 `RASA_UNAVAILABLE` (already have connection refused)
-- Malformed Rasa JSON → 500 or safe error (define contract)
-
-#### `/api/data/profile/route.test.ts` (P2)
-
-- Mirror pattern from transactions route tests
-
-#### `/api/transactions/export/route.test.ts` (P2)
-
-- CSV header row
-- Commas/quotes in description escaped
-- Empty transactions → header only
-
-### 5.2 Unit tests — backend (pytest)
-
-#### `tests/test_db/test_queries.py` (P0) — **highest value gap**
-
-Use `@pytest.fixture` temp DB:
-
-```python
-# Pattern: in-memory or tmp_path SQLite, run schema init, call queries directly
-```
-
-| Function | Cases |
-|----------|--------|
-| `insert_transaction` | insert + read back; currency default |
-| `get_latest_pending_transaction` | one pending; none; wrong user |
-| `update_transaction` | pending → confirmed; wrong status |
-| `delete_transaction` | removes row; user scoping |
-| `get_spending_by_category` | filters by period and category |
-| `get_balance_summary` | income/expense/net |
-| `list_user_transactions` | ordering, limit |
-| `clear_user_transactions` | only target user |
-| `get_profile` / `update_profile` | defaults; partial update |
-
-**Security meta-test (P1):** For each query function, assert SQL or parameters always include `user_id` (static review checklist in `docs/backend-query-audit.md` → automate).
-
-#### `tests/test_utils/test_categories.py` (P1)
-
-- `"Groceries"` → slug; unknown → `other`
-
-#### `tests/test_utils/test_formatting.py` (P2)
-
-- Summary strings match locale/currency rules
-
-#### `tests/test_server_data.py` (P0)
-
-Extend `TestClient`:
-
-- `GET /data/transactions` → `[]` then after insert via handler mock
-- `DELETE /data/transactions` clears
-- `GET/PATCH /data/profile`
-- Unknown route 404
-
-#### Handler gaps (P1)
-
-| Handler | New tests |
-|---------|-----------|
-| `record_transaction` | `transaction_type: income`; `normalize_category`; DB exception → dispatcher error |
-| `update_transaction` | edit flow: only category changes; confirm when already confirmed (idempotent) |
-
-### 5.3 Contract tests (P1)
-
-**Location:** `frontend/src/server/chat/fixtures/` (existing) + `docs/schemas/`
-
-| Fixture file | Assert |
-|--------------|--------|
-| `balance-webhook.json` | reportData numbers |
-| `spending-webhook.json` | topCategory |
-| **Add** `transaction-pending-webhook.json` | transaction card fields |
-| **Add** `text-only-webhook.json` | plain text path |
-| **Add** `invalid-payload.json` | mapper ignores / fallback |
-
-Optional: JSON Schema in `docs/schemas/rasa-custom-payloads.json` validated in CI with `ajv` or Python `jsonschema`.
-
-**API error contract:** All routes return `{ error: { code, message } }` — shared Zod/type test.
-
-### 5.4 Integration tests (P1–P2)
-
-#### INT-A: Next.js ↔ Actions (Vitest or separate `frontend/tests/integration/`)
-
-- Start actions with `TestClient` not enough — use **real uvicorn on random port** in `beforeAll` or mock `proxyToActions` at boundary only.
-- Prefer: **pytest** tests hitting actions + **Vitest** hitting Next with `MSW` mocking upstream.
-
-| Test | Method |
-|------|--------|
-| Proxy GET transactions | Vitest calls `GET /api/data/transactions` with mocked `proxyToActions` ✅ (done) |
-| Full stack | Playwright or script: curl Next → actions → sqlite |
-
-#### INT-B: Rasa webhook ↔ Next `/api/chat`
-
-- With `mock-rasa.py` running: POST `/api/chat` → 200 + message shape
-- Add to `scripts/smoke-e2e.sh` or new `scripts/integration-chat.sh`
-
-#### INT-C: Rasa ↔ Actions (real CALM)
-
-- Requires `RASA_PRO_LICENSE`, trained model, action server — **nightly** job only
-- Record expense end-to-end: webhook contains `transaction_pending` AND row in SQLite
-
-#### INT-D: SQLite persistence through confirm flow
-
-1. `action_record_transaction` → pending row
-2. `action_update_transaction` → status confirmed
-3. `GET /data/transactions` includes row
-
-pytest with real handlers + temp DB (no Rasa).
-
-### 5.5 Rasa e2e tests (YAML) — expansion plan
-
-**Prerequisites:** `RASA_PRO_BETA_STUB_CUSTOM_ACTION=true`, stubs in `e2e_test_cases.yml`.
-
-Add under `backend/rasa/tests/`:
-
-```
-tests/
-├── e2e_test_cases.yml          # extend existing
-├── flows/
-│   ├── test_record_income.yml
-│   ├── test_edit_pending.yml
-│   ├── test_get_balance.yml
-│   └── test_list_transactions.yml
-└── conftest.yml                # fixtures: pending_transaction, no_pending_transaction ✅
-```
-
-| New `test_case` | Steps / assertions |
-|-----------------|------------------|
-| `record income happy path` | user: "got paid 2000 salary" → `flow_started: record_income` → `action_executed: action_record_transaction` |
-| `edit pending amount` | fixture pending → user: "change amount to 60" → `flow_started: edit_pending_transaction` → `action_executed: action_update_transaction` |
-| `get balance this month` | user: "what's my balance?" → `get_balance` flow → `action_get_balance` |
-| `list recent transactions` | user: "show my transactions" → `list_recent_transactions` |
-| `record expense rejection` | user gives invalid amount → `bot_uttered: utter_ask_amount` (if deterministic with stub) |
-
-**Stub additions** for `action_update_transaction` on edit path (slot changes).
-
-**CI job `rasa-e2e`:**
-
-```yaml
-# Requires Rasa Pro image + license secret
-- run: docker compose run --rm -e RASA_PRO_BETA_STUB_CUSTOM_ACTION=true rasa test e2e
-```
-
-Until license in CI: run e2e on scheduled workflow or manual `workflow_dispatch`.
-
-### 5.6 Browser E2E (Playwright) — P2
-
-**Setup:** `frontend/playwright.config.ts`, `tests/e2e/`, `webServer` pointing at `make dev` or `pnpm frontend:dev` + `ensure-local-backend.sh`.
-
-| Spec | Steps | Assert |
-|------|-------|--------|
-| `chat-happy-path.spec.ts` | Open `/chat` → send "spent 12 on lunch" | Assistant message; transaction card visible |
-| `confirm-transaction.spec.ts` | Pending card → Confirm | Sidebar count increases; card confirmed |
-| `discard-transaction.spec.ts` | Discard | Card removed / discarded state |
-| `settings-profile.spec.ts` | Change currency → Save | Success message; reload persists (if wired) |
-| `export-csv.spec.ts` | Trigger export link | Download headers |
-| `error-rasa-down.spec.ts` | Stop mock Rasa → send message | Error bubble, not blank screen |
-| `a11y-smoke.spec.ts` | axe on `/chat` | No critical violations |
-
-Use **mock Rasa** in CI for stability; optional tagged `@real-rasa` for nightly.
-
-### 5.7 Non-functional & security (P3)
-
-| Area | Test |
-|------|------|
-| Rate limit | Burst 61 POSTs → 429 |
-| CORS | actions only allows localhost:3000 |
-| Input validation | XSS strings in chat message stored but escaped in render (Playwright) |
-| `user_id` isolation | Two users in DB — queries never cross (integration) |
-| Auth (future) | `/api/chat` 401 without session |
-
----
-
-## 6. CI/CD pipeline (target)
-
-```yaml
-# Proposed stages on every PR
-jobs:
-  frontend:      typecheck + vitest + biome
-  backend:       ruff + pyright + pytest
-  contract:      vitest fixtures + (optional) schema validate
-  integration:   pytest test_db + bash smoke (actions health)
-  rasa-e2e:      optional / manual / nightly with secret
-  playwright:    optional on main or nightly
-```
-
-| Stage | Blocks merge? | When |
-|-------|---------------|------|
-| frontend + backend unit | Yes | Every PR |
-| contract | Yes | Every PR |
-| integration smoke | Yes | Every PR |
-| rasa e2e | No → Yes when license available | Nightly → PR |
-| playwright | No | Nightly |
-
-**Local pre-push:** `make test` = unit both sides + `scripts/check-health.sh` (add target).
+Phase 0–2 deliverables are **implemented**. Phase 3 Playwright specs are **implemented** (7 tests). Optional follow-ups: auth tests (T3-3), nightly Playwright in CI, k6 load tests.
 
 ---
 
 ## 7. Phased implementation roadmap
 
-### Phase 0 — Quick wins (1–2 days) — **~40 new tests**
+### Phase 0 — ✅ Complete
 
-| ID | Deliverable | Est. tests |
-|----|-------------|------------|
-| T0-1 | `finance-calculations.test.ts` | 12 |
-| T0-2 | `tests/test_db/test_queries.py` (core CRUD) | 15 |
-| T0-3 | `tests/test_server_data.py` | 6 |
-| T0-4 | `/api/chat` route: Rasa HTTP error paths | 3 |
-| T0-5 | `map-api-messages.test.ts` | 5 |
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| T0-1 | `finance-calculations.test.ts` | ✅ |
+| T0-2 | `tests/test_db/test_queries.py` | ✅ |
+| T0-3 | `tests/test_server_data.py` | ✅ |
+| T0-4 | `/api/chat` route error paths | ✅ |
+| T0-5 | `map-api-messages.test.ts` | ✅ |
 
-### Phase 1 — Contracts & mappers (2–3 days)
+### Phase 1 — ✅ Complete
 
-| ID | Deliverable |
-|----|-------------|
-| T1-1 | Golden fixtures: pending, text-only, invalid |
-| T1-2 | `schemas.test.ts`, `rate-limit.test.ts` |
-| T1-3 | `financial-data.test.ts` |
-| T1-4 | Extend `map-rasa-responses` edge cases |
-| T1-5 | `test_categories.py`, `test_formatting.py` |
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| T1-1 | Golden fixtures | ✅ |
+| T1-2 | `schemas.test.ts`, `rate-limit.test.ts` | ✅ |
+| T1-3 | `financial-data.test.ts` | ✅ |
+| T1-4 | Extend `map-rasa-responses` | ✅ |
+| T1-5 | `test_categories.py`, `test_formatting.py` | ✅ |
 
-### Phase 2 — Rasa e2e & integration (3–5 days)
+### Phase 2 — ✅ Complete
 
-| ID | Deliverable |
-|----|-------------|
-| T2-1 | 4 new e2e YAML files (income, balance, list, edit) |
-| T2-2 | Wire `rasa-e2e` CI job (manual dispatch first) |
-| T2-3 | `scripts/integration-chat.sh` in smoke |
-| T2-4 | Handler integration tests with temp SQLite |
-| T2-5 | `test_mock_rasa.py` HTTP contract |
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| T2-1 | 4 new e2e YAML flow files | ✅ |
+| T2-2 | `rasa-e2e` CI workflow (dispatch) | ✅ |
+| T2-3 | `scripts/integration-chat.sh` | ✅ |
+| T2-4 | Handler + SQLite integration | ✅ |
+| T2-5 | `test_mock_rasa.py` | ✅ |
 
-### Phase 3 — Playwright & hardening (5+ days)
+### Phase 3 — ✅ Complete (core)
 
-| ID | Deliverable |
-|----|-------------|
-| T3-1 | Playwright setup + CP-1, CP-3 specs |
-| T3-2 | Settings + export specs |
-| T3-3 | Auth tests when Supabase returns |
-| T3-4 | Coverage thresholds (optional 70% on `actions/`, `server/chat/`) |
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| T3-1 | Playwright CP-1, CP-3 | ✅ |
+| T3-2 | Settings + export specs | ✅ |
+| T3-3 | Auth tests when Supabase returns | deferred |
+| T3-4 | Coverage thresholds | ✅ Vitest 70% / pytest `--cov=actions` |
 
 ---
 
@@ -467,66 +224,27 @@ jobs:
 
 | CALM flow | Unit (handler) | DB integration | Rasa e2e | Playwright |
 |-----------|----------------|----------------|----------|------------|
-| `record_expense` | ✅ | ⭕ T0-2 | ✅ | CP-1 |
-| `record_income` | ⭕ T1 | ⭕ T0-2 | ⭕ T2-1 | ⭕ |
-| `confirm_pending_transaction` | ✅ | ⭕ T0-2 | ✅ | CP-1 |
-| `discard_pending_transaction` | ✅ | ⭕ | ✅ | CP-3 |
-| `edit_pending_transaction` | ⭕ | ⭕ | ⭕ T2-1 | ⭕ |
+| `record_expense` | ✅ | ✅ | ✅ | ✅ |
+| `record_income` | ✅ | ✅ | ✅ | ⭕ |
+| `confirm_pending_transaction` | ✅ | ✅ | ✅ | ✅ |
+| `discard_pending_transaction` | ✅ | ✅ | ✅ | ✅ |
+| `edit_pending_transaction` | ⭕ | ⭕ | ✅ | ⭕ |
 | `no_pending_transaction` | ✅ | — | ✅ | ⭕ |
 | `query_spending_report` | ✅ | ⭕ | ✅ | ⭕ |
-| `get_balance` | ✅ | ⭕ | ⭕ T2-1 | ⭕ |
-| `list_recent_transactions` | ✅ | ⭕ | ⭕ T2-1 | ⭕ |
-
----
-
-## 9. TDD workflow for the team
-
-1. **Pick behavior** from table above or a new ADR/feature spec.
-2. **RED:** Write the smallest failing test (unit preferred).
-3. **GREEN:** Implement minimal code.
-4. **REFACTOR:** Run `pnpm test` + `uv run pytest tests/ -q` + lint.
-5. **Promote:** If behavior crosses boundaries, add integration or e2e **without** duplicating all unit cases.
-6. **Rasa changes:** Always add/update e2e YAML when flows or stubs change.
-
-**Bug fix (Prove-It):** Reproduce at lowest layer → fix → add e2e only if unit could not catch (e.g. wiring).
-
----
-
-## 10. Test data & environments
-
-| Environment | Rasa | Actions DB | Use |
-|-------------|------|------------|-----|
-| Local mock | `mock-rasa.py` | `backend/data/finguard.db` | Dev, Playwright CI |
-| Local Pro | Docker `rasa-pro` | SQLite | Full CALM |
-| CI unit | — | temp file / mocks | PR |
-| CI e2e | Docker + license secret | stub actions | Nightly |
-| Future staging | Hosted Rasa | Supabase | Pre-prod |
-
-**Fixtures:** Prefer factory functions in pytest; golden JSON for webhook shapes only.
+| `get_balance` | ✅ | ⭕ | ✅ | ⭕ |
+| `list_recent_transactions` | ✅ | ⭕ | ✅ | ⭕ |
 
 ---
 
 ## 11. Metrics & reporting
 
-| Metric | Target (3 months) |
-|--------|-------------------|
-| Frontend unit tests | 60+ |
-| Backend unit + db tests | 80+ |
-| Rasa e2e cases | 12+ |
-| Playwright specs | 6+ |
-| CI time | < 8 min PR pipeline |
-| Flake rate | < 1% (retry only in Playwright) |
-
-Track via CI artifacts: pytest `--cov=actions` (optional), Vitest coverage v8 (optional).
-
----
-
-## 12. Out of scope (for now)
-
-- Load testing LiteLLM / Rasa LLM routing
-- Visual regression screenshots
-- Supabase RLS tests (auth deferred)
-- Multi-channel Rasa (Telegram, etc.)
+| Metric | Target (3 months) | Current |
+|--------|-------------------|---------|
+| Frontend unit tests | 60+ | **65** ✅ |
+| Backend unit + db tests | 80+ | **63** (close; add handler edge cases) |
+| Rasa e2e cases | 12+ | **9+** flow files (run with Pro license) |
+| Playwright specs | 6+ | **7** ✅ |
+| `actions/` line coverage | 70%+ | **89%** ✅ |
 
 ---
 
@@ -537,8 +255,17 @@ Track via CI artifacts: pytest `--cov=actions` (optional), Vitest coverage v8 (o
 pnpm test                                    # frontend Vitest
 cd backend && uv run pytest tests/ -q        # backend
 
+# Coverage
+make test-coverage
+cd frontend && pnpm test:coverage
+cd backend && uv run pytest tests/ --cov=actions --cov-report=term-missing
+
+# Browser E2E (starts mock stack + Next)
+make test-e2e
+
 # Integration smoke
 ./scripts/smoke-e2e.sh
+./scripts/integration-chat.sh   # requires Next + mock Rasa
 ./scripts/check-health.sh
 
 # Rasa e2e (Pro + stubs)
@@ -549,11 +276,3 @@ docker compose run --rm rasa test e2e tests/
 # Full local stack
 make dev
 ```
-
----
-
-## 14. Next action (recommended)
-
-Start **Phase 0** in this order: `test_queries.py` → `finance-calculations.test.ts` → `test_server_data.py` → expand `/api/chat` tests. That closes the largest correctness gaps (persistence + UI numbers + API boundaries) before investing in Playwright.
-
-When implementing, link PRs to rows in **Section 4** and update this doc’s “Covered?” column.
