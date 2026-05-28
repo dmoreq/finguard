@@ -80,4 +80,62 @@ describe("POST /api/chat", () => {
 
     vi.mocked(globalThis.fetch).mockRestore();
   });
+
+  it("returns 503 when Rasa responds with HTTP error", async () => {
+    vi.mocked(getRasaUrl).mockReturnValue("http://localhost:5005");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("upstream error", { status: 500 }),
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "hello" }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    const body = await response.json();
+    expect(body.error?.code).toBe("RASA_UNAVAILABLE");
+
+    vi.mocked(globalThis.fetch).mockRestore();
+  });
+
+  it("returns 400 for invalid JSON body", async () => {
+    vi.mocked(getRasaUrl).mockReturnValue("http://localhost:5005");
+
+    const response = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "" }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error?.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 500 when Rasa returns non-JSON", async () => {
+    vi.mocked(getRasaUrl).mockReturnValue("http://localhost:5005");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("not json", { status: 200, headers: { "Content-Type": "text/plain" } }),
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "hello" }),
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error?.code).toBe("INTERNAL_ERROR");
+
+    vi.mocked(globalThis.fetch).mockRestore();
+  });
 });
