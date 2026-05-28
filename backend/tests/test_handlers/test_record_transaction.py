@@ -76,3 +76,47 @@ async def test_record_transaction_rejects_invalid_amount(
     assert events == []
     mock_dispatcher.utter_message.assert_called_once()
     assert "couldn't process" in mock_dispatcher.utter_message.call_args.kwargs["text"].lower()
+
+
+@pytest.mark.asyncio
+async def test_record_transaction_income_type(
+    mock_dispatcher: MagicMock,
+    mock_tracker: MagicMock,
+) -> None:
+    mock_tracker.active_flow_metadata = {"transaction_type": "income"}
+    row = TransactionRow(
+        id="tx-income",
+        user_id="user-1",
+        type="income",
+        amount=2000.0,
+        currency="USD",
+        category="salary",
+        description=None,
+        transaction_date="2026-05-27",
+        status="pending_confirmation",
+        source="manual_chat",
+        ai_confidence=None,
+        created_at=datetime(2026, 5, 27, 12, 0, 0),
+        updated_at=datetime(2026, 5, 27, 12, 0, 0),
+    )
+
+    mock_client = AsyncMock()
+    mock_cm = AsyncMock()
+    mock_cm.__aenter__.return_value = mock_client
+    mock_cm.__aexit__.return_value = None
+
+    with (
+        patch("actions.handlers.record_transaction.get_db", return_value=mock_cm),
+        patch(
+            "actions.handlers.record_transaction.insert_transaction",
+            new_callable=AsyncMock,
+            return_value=row,
+        ) as insert_mock,
+        patch(
+            "actions.handlers.record_transaction.parse_relative_date",
+            return_value=MagicMock(to_date_string=lambda: "2026-05-27"),
+        ),
+    ):
+        await ActionRecordTransaction().run(mock_dispatcher, mock_tracker, {})
+
+    assert insert_mock.await_args.args[1].type == "income"
