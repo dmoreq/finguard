@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.16",
     "@next/swc-darwin-arm64": "16.2.6",
     "@playwright/test": "^1.52.0",
     "@types/node": "latest",
