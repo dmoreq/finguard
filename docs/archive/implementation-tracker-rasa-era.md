@@ -1,5 +1,7 @@
 # Finguard Rasa CALM Backend — Implementation Tracker
 
+> **Archived:** Superseded May 2026. Current stack: [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 **Project:** Finguard Personal Financial Chat Backend
 **Framework:** Rasa CALM 3.9+ with Gemini 2.0 Flash + DeepSeek V3
 **Start Date:** 2026-05-27
@@ -17,9 +19,9 @@
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — Stack overview (start here)
 - [runbooks/local-development.md](./runbooks/local-development.md) — `make dev`
 - [TEST_STRATEGY.md](./TEST_STRATEGY.md) — QA plan
-- [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) — Legacy cleanup log
+- [cleanup-plan-2026-05-28.md](./cleanup-plan-2026-05-28.md) — Legacy cleanup log
 - [archive/](./archive/) — Superseded Supabase-era plans
-- [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json) — Rasa custom payload contract
+- [schemas/chat-payloads.json](../schemas/chat-payloads.json) — Chat webhook payload contract
 - This file — Progress and day-to-day status
 
 ---

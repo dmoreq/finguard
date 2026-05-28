@@ -1,19 +1,19 @@
-# Backend query audit (BE-1)
+# Backend query audit
 
-All functions in `actions/db/queries.py` scope by `user_id` (or derive it from the caller).
+All functions in `actions/db/queries.py` must scope by `user_id` (or derive it from the authenticated caller).
 
 | Function | Table | `user_id` filter |
 |----------|-------|------------------|
-| `insert_transaction` | transactions | In `TransactionInsert.user_id` |
-| `get_spending_by_category` | transactions | `.eq("user_id", user_id)` |
-| `get_balance_summary` | RPC | `p_user_id` argument |
-| `list_transactions` | transactions | `.eq("user_id", user_id)` |
-| `get_latest_pending_transaction` | transactions | `.eq("user_id", user_id)` |
-| `get_transaction` | transactions | `.eq("user_id", user_id)` |
-| `delete_transaction` | transactions | `.eq("user_id", user_id)` |
-| `update_transaction` | transactions | `.eq("user_id", user_id)` |
-| `confirm_transaction` | transactions | `.eq("user_id", user_id)` |
+| `insert_transaction` | transactions | `TransactionInsert.user_id` |
+| `get_spending_by_category` | transactions | `WHERE user_id = ?` |
+| `get_balance_summary` | transactions | `WHERE user_id = ?` |
+| `list_transactions` | transactions | `WHERE user_id = ?` |
+| `get_latest_pending_transaction` | transactions | `WHERE user_id = ?` |
+| `get_transaction` | transactions | `WHERE user_id = ?` |
+| `delete_transaction` | transactions | `WHERE user_id = ?` |
+| `update_transaction` | transactions | `WHERE user_id = ?` |
+| `get_profile` / `update_profile` | profiles | `WHERE id = ?` (profile id = user id) |
 
-**Session start** loads `profiles` with `.eq("id", user_id)` where `user_id` comes from webhook metadata or `sender_id`.
+**Rule:** Never add a query without `user_id` in the WHERE clause for user-owned rows.
 
-**Rule:** Never add a query without `user_id` (or primary key + `user_id`) in the WHERE clause.
+**Chat:** `load_user_profile` in `actions/services/profile.py` reads profile by `user_id` from webhook metadata.

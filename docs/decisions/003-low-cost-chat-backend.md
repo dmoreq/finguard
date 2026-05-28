@@ -52,5 +52,5 @@ Replace Rasa CALM with:
 
 ## Verification
 
-- All items in LOW_COST_IMPLEMENTATION_PLAN Section 12 (global verification).
+- All items in [archive/low-cost-migration/implementation-plan.md](../archive/low-cost-migration/implementation-plan.md) Section 12 (global verification).
 - Golden webhook fixtures in `frontend/src/server/chat/fixtures/` pass without change.

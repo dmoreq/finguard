@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Finguard Rasa custom json_message payloads",
-  "description": "Shapes emitted by backend action handlers via dispatcher.utter_message(json_message=...).",
+  "title": "Finguard chat webhook custom payloads",
+  "description": "Shapes in POST /webhooks/rest/webhook responses (custom field). Consumed by frontend map-rasa-responses.",
   "oneOf": [
     {
       "type": "object",

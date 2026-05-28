@@ -1,8 +1,10 @@
 # Low-Cost Conversational Backend Plan
 
+> **Archived:** Migration completed 2026-05-28. See [ARCHITECTURE.md](../../ARCHITECTURE.md).
+
 **Status:** Implemented (2026-05-28)
 **Date:** 2026-05-28
-**Implementation plan:** [LOW_COST_IMPLEMENTATION_PLAN.md](./LOW_COST_IMPLEMENTATION_PLAN.md) — phased tasks, Rasa CALM decommission checklist, commit strategy
+**Implementation plan:** [implementation-plan.md](./implementation-plan.md) — phased tasks, Rasa CALM decommission checklist, commit strategy
 **Replaces (for licensing reasons):** Rasa CALM + Rasa Pro dependency described in [ARCHITECTURE.md](./ARCHITECTURE.md) and [archive/rasa-calm-backend-plan.md](./archive/rasa-calm-backend-plan.md)
 
 ---
@@ -62,7 +64,7 @@ Reuse as much as possible; replace only the dialogue engine.
 |-------|--------|------|
 | `backend/actions/db/*`, SQLite schema | **Yes** | Layer 4 should call existing queries/handlers, not duplicate INSERT logic. |
 | `backend/actions/handlers/*` | **Yes** | `record_transaction`, confirm/update/delete — already tested (e.g. `test_confirm_flow_integration.py`). |
-| `frontend` `/api/chat` + `map-rasa-responses.ts` | **Mostly** | Keep response shapes in [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json); backend can emit the same `json_message` payloads without Rasa. |
+| `frontend` `/api/chat` + `map-rasa-responses.ts` | **Mostly** | Keep response shapes in [schemas/chat-payloads.json](../../schemas/chat-payloads.json); backend can emit the same `json_message` payloads without Rasa. |
 | `backend/rasa/` flows & e2e | **Deprecate** | Replace with Burr graph tests + HTTP contract tests. |
 | Docker `rasa` service | **Remove** (later) | Drops Pro license and image weight from local/CI. |
 | LiteLLM | **Optional** | Only needed if Layer 3 calls cloud models through a proxy; local Ollama can skip it. |
@@ -211,7 +213,7 @@ class ExpenseDetail(BaseModel):
 **Responses**
 
 - Prefer **template strings** for reports (“You spent {total} {currency} in {period}”) to avoid a second LLM call for wording.
-- Emit the same structured payloads the UI already maps: `transaction_pending`, `balance`, `spending_report` (see [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json)).
+- Emit the same structured payloads the UI already maps: `transaction_pending`, `balance`, `spending_report` (see [schemas/chat-payloads.json](../../schemas/chat-payloads.json)).
 
 ---
 
@@ -368,7 +370,7 @@ Record answers here as you decide:
 - [Burr](https://burr.dagworks.io/) — stateful applications / FSM orchestration
 - [Instructor](https://python.useinstructor.com/) — structured LLM outputs with Pydantic
 - [Rasa CALM concepts](https://rasa.com/docs/learn/concepts/calm/) — what you are replicating in Burr
-- FinGuard: [ARCHITECTURE.md](./ARCHITECTURE.md), [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json), `backend/rasa/data/flows/record_transaction.yml`
+- FinGuard: [ARCHITECTURE.md](./ARCHITECTURE.md), [schemas/chat-payloads.json](../../schemas/chat-payloads.json), `backend/rasa/data/flows/record_transaction.yml`
 
 ---
 

@@ -1,8 +1,10 @@
 # Low-Cost Backend — Comprehensive Implementation Plan
 
-**Status:** Approved for execution
+> **Archived:** Migration completed 2026-05-28.
+
+**Status:** Completed
 **Date:** 2026-05-28
-**Parent spec:** [low_cost_plan.md](./low_cost_plan.md)
+**Parent spec:** [design-rationale.md](./design-rationale.md)
 **Goal:** Replace Rasa CALM + Rasa Pro with Semantic Router + Burr + Instructor, reuse SQLite/handlers, and **remove all Rasa CALM code, tooling, and documentation** from the active codebase.
 
 ---
@@ -220,7 +222,7 @@ Each phase ends with **verification gate** (Section 12). Do not start the next p
 | 1.1 | Add deps to `pyproject.toml`: `semantic-router`, `burr`, `instructor`, `sentence-transformers` (or encoder dep per semantic-router docs) |
 | 1.2 | Create `actions/chat/` package skeleton per Section 4 |
 | 1.3 | `actions/chat/session.py` — in-memory dict keyed by `sender_id` |
-| 1.4 | `actions/chat/respond/payloads.py` — functions mirroring [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json) |
+| 1.4 | `actions/chat/respond/payloads.py` — functions mirroring [schemas/chat-payloads.json](../../schemas/chat-payloads.json) |
 | 1.5 | Stub `POST /webhooks/rest/webhook` returning fixed `text-only` payload |
 
 **Gate:** `curl` stub webhook returns 200; pytest `test_webhook_stub`.
@@ -685,7 +687,7 @@ docs: rewrite architecture for low-cost backend
 
 - [low_cost_plan.md](./low_cost_plan.md) — architecture rationale and review
 - [TEST_STRATEGY.md](./TEST_STRATEGY.md) — update during Phase 9
-- [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json) — contract to preserve (rename optional)
+- [schemas/chat-payloads.json](../../schemas/chat-payloads.json) — contract to preserve (rename optional)
 
 ---
 

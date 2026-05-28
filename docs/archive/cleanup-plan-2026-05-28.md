@@ -1,5 +1,7 @@
 # Legacy & Redundancy Cleanup Plan
 
+> **Archived:** Executed 2026-05-28. Further Rasa removal documented in [low-cost-migration/](./low-cost-migration/).
+
 **Status:** Executed 2026-05-28
 **Goal:** Remove dead code from the Supabase/auth era, archive deferred assets, align docs with **local-first (SQLite + localStorage + Rasa)**.
 

@@ -1,7 +1,9 @@
 # Finguard — Rasa CALM Backend Plan
 
+> **Archived:** Superseded May 2026. See [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 **Date:** 2026-05-27
-**Status:** Proposal
+**Status:** Superseded
 **Scope:** Python AI backend for personal financial chat using Rasa CALM + Gemini 2.0 Flash / DeepSeek V3
 
 ---
