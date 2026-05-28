@@ -1,76 +1,77 @@
-# Local development runbook
+# Local development
 
-Stack: **Next.js** + **Rasa CALM** + **Supabase**. See [ARCHITECTURE.md](../ARCHITECTURE.md).
+No Supabase, no login. **SQLite + localStorage + Rasa.**
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Prerequisites
 
 - Node 22+, pnpm
-- Python 3.12+, [uv](https://docs.astral.sh/uv/)
-- Docker Desktop (for Rasa + LiteLLM + action server)
-- Supabase project (free tier is fine)
+- Python 3.12+, uv
+- Docker Desktop (Rasa Pro only; mock Rasa needs no Docker)
+- `GEMINI_API_KEY` in `backend/.env` (for `make train` with Rasa Pro)
 
-## 1. Database
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Run SQL from `supabase/migrations/` in order (SQL editor or CLI):
-   - `20260527000000_initial_schema.sql`
-   - `20260527000001_balance_rpc.sql`
-   - `20260528000000_profile_on_signup.sql`
-3. Note **Project URL**, **anon key**, and **service role key**.
-
-## 2. Backend (Rasa stack)
+## Start
 
 ```bash
-cp backend/.env.example backend/.env
-# Fill: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, LITELLM_MASTER_KEY
-
-cd backend
-docker compose build
-docker compose run --rm rasa train   # first time / after flow changes
-docker compose up
+make setup
+make train    # first time / after flow changes (Rasa Pro license required)
+make dev      # → http://localhost:3000/chat
 ```
 
-Health checks:
+Stop: `Ctrl+C` then `make down`
 
-- Actions: http://localhost:5055/health
-- Rasa: http://localhost:5005/status
-- LiteLLM: http://localhost:4000/health (needs keys in `.env`)
-
-Smoke script (repo root):
+Frontend only (starts action server + mock Rasa if ports are free):
 
 ```bash
-chmod +x scripts/smoke-e2e.sh
-./scripts/smoke-e2e.sh
-```
-
-## 3. Frontend
-
-```bash
-cp frontend/.env.example frontend/.env.local
-# Fill: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-# RASA_URL=http://localhost:5005
-
-pnpm --dir frontend install
 pnpm frontend:dev
 ```
 
-Open http://localhost:3000 → **Sign up** at `/login` → `/chat`.
+## Env
 
-## 4. Happy path checklist
+**frontend/.env.local**
 
-- [ ] Sign up with email/password
+```bash
+RASA_URL=http://localhost:5005
+ACTIONS_URL=http://127.0.0.1:5055
+```
+
+**backend/.env**
+
+```bash
+GEMINI_API_KEY=your-key
+LITELLM_MASTER_KEY=dev-local-key
+# RASA_PRO_LICENSE=   # leave empty for mock Rasa on :5005
+```
+
+## Data files
+
+| What | Location |
+|------|----------|
+| Transactions, profile | `backend/data/finguard.db` |
+| Chat messages | Browser `localStorage` |
+
+## Health
+
+```bash
+make health
+# or
+./scripts/check-health.sh
+```
+
+## Happy path
+
+- [ ] Open http://localhost:3000/chat
 - [ ] Send: `Spent $10 on coffee`
-- [ ] See pending transaction card
-- [ ] Confirm
-- [ ] Row in Supabase `transactions` with `status = confirmed`
-- [ ] Dashboard sidebar shows the expense
+- [ ] See pending transaction card (mock or CALM)
+- [ ] Confirm in UI
+- [ ] Transaction appears in sidebar
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| 401 on chat | Sign in; check Supabase keys in `.env.local` |
-| 503 Rasa not configured | Set `RASA_URL`; start `docker compose up` |
-| No profile / defaults only | Apply `20260528000000_profile_on_signup.sql` |
-| Rasa empty replies | Run `docker compose run --rm rasa train` |
-| Actions DB errors | Check `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env` |
+| `ERR_CONNECTION_REFUSED` on `/api/data/*` | Run `make dev` or `pnpm frontend:dev` (starts action server) |
+| 503 on `/api/chat` | Start mock Rasa or `make dev`; check `RASA_URL` |
+| Rasa Pro won't start | Set `RASA_PRO_LICENSE` or use mock mode (empty license) |
+| Port 5055 in use | `make down`; kill stale `uvicorn` / Docker containers |

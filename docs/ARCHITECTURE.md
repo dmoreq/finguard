@@ -1,6 +1,6 @@
-# Finguard architecture (hobby stack)
+# Finguard architecture
 
-Keep it simple: **Next.js + Rasa CALM + Supabase**. Scale later only if you need to.
+**Next.js + Rasa CALM + local SQLite.** No Supabase or auth until you add them later.
 
 ## The whole system in one picture
 
@@ -8,53 +8,54 @@ Keep it simple: **Next.js + Rasa CALM + Supabase**. Scale later only if you need
 You (browser)
     │
     ▼
-Next.js  ──sign in──►  Supabase Auth + Postgres (your data)
+Next.js  ──/api/data/*──►  Action server (FastAPI)  ──►  SQLite (backend/data/)
     │
     │  POST /api/chat
     ▼
-Rasa CALM  ──flows──►  Action server  ──writes──►  Supabase
+Rasa CALM  ──flows──►  Action server (custom actions)
     │
-    └── LLM (via LiteLLM in Docker) for understanding what you said
+    └── LLM via LiteLLM (host) when RASA_PRO_LICENSE is set
+        or mock-rasa.py locally without a license
 ```
+
+Chat messages persist in **browser localStorage** for now. Transactions and profile live in **SQLite**.
 
 ## What each piece does
 
 | Piece | Job |
 |-------|-----|
-| **Next.js** (`frontend/`) | UI, login, dashboard, proxy chat to Rasa |
-| **Supabase** | Users, transactions, chat history; RLS so you only see your rows |
-| **Rasa** (`backend/rasa/`) | Conversation flows: record expense, confirm, reports |
-| **Action server** (`backend/actions/`) | Python code that inserts/updates rows in Supabase |
-| **LiteLLM** (Docker) | Sends Rasa’s LLM calls to Gemini (optional second model later) |
-
-You do **not** need to think about Caddy, Redis, or extra APIs until you deploy for real users.
+| **Next.js** (`frontend/`) | UI, `/api/chat` → Rasa, `/api/data/*` → action server |
+| **Action server** (`backend/actions/`) | Rasa custom actions + REST reads for the UI |
+| **SQLite** | Transactions and profile (`backend/data/finguard.db`) |
+| **Rasa** (`backend/rasa/`) | CALM flows: record, confirm, reports |
+| **LiteLLM** (host, optional) | LLM routing when using Rasa Pro |
 
 ## Repo layout
 
 ```text
-frontend/     Next app — start here for UI work
-backend/      Rasa + actions — `docker compose up` for local chat brain
-supabase/     SQL migrations — run once per Supabase project
-docs/         Plans; read this file first, ignore the long review until you need it
+frontend/     Next app
+backend/      Rasa config + Python actions
+docs/         Architecture, runbooks, archive/
+docs/archive/supabase/   Deferred Postgres migrations
 ```
 
-## Local dev (minimal)
+## Local dev
 
-1. Supabase project + run migrations in `supabase/migrations/`.
-2. `frontend/.env.local` — Supabase URL/key + `RASA_URL=http://localhost:5005`.
-3. `backend/.env` — Supabase service role + LLM keys (see `backend/.env.example`).
-4. `cd backend && docker compose up` — Rasa + actions + LiteLLM.
-5. `pnpm frontend:dev` → sign in at `/login` → `/chat`.
+```bash
+make dev
+```
 
-## Design rules (so it stays simple)
+See [runbooks/local-development.md](./runbooks/local-development.md).
 
-1. **All chat goes through Rasa** — no second “AI parse” path in the app.
-2. **Supabase is the database** — not `localStorage`, not a second DB.
-3. **Money changes happen in Rasa actions** — not from the browser writing transactions directly (reads via Supabase client are fine).
-4. **Add complexity only when it hurts** — e.g. Redis when you run multiple Rasa containers, rate limits when you have abuse.
+## When to add Supabase again
 
-## When to read more
+1. Multi-user auth and hosted Postgres.
+2. Apply archived migrations under `docs/archive/supabase/migrations/`.
+3. Add Supabase auth to Next.js; see [decisions/001-service-role-in-actions.md](./decisions/001-service-role-in-actions.md).
 
-- **What to build next (full backlog):** [IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md)
-- Day-to-day checkboxes: [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md)
-- Deep dive / scorecards rubric: [SYSTEM_DESIGN_REVIEW.md](./SYSTEM_DESIGN_REVIEW.md) (optional)
+## More docs
+
+- [IMPLEMENTATION_TRACKER.md](./IMPLEMENTATION_TRACKER.md) — status
+- [TEST_STRATEGY.md](./TEST_STRATEGY.md) — QA plan
+- [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) — legacy removal log
+- [archive/](./archive/) — superseded planning docs

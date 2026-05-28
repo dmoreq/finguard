@@ -3,24 +3,23 @@
 **Project:** Finguard Personal Financial Chat Backend
 **Framework:** Rasa CALM 3.9+ with Gemini 2.0 Flash + DeepSeek V3
 **Start Date:** 2026-05-27
-**Last Updated:** 2026-05-27
+**Last Updated:** 2026-05-28
 **Execution Mode:** Subagent-driven (sequential tasks with spec + quality review)
 
 ---
 
 ## Overview
 
-Hobby stack: **Next.js + Rasa CALM + Supabase**. See [ARCHITECTURE.md](./ARCHITECTURE.md) and [IMPROVEMENT_PLAN.md](./IMPROVEMENT_PLAN.md).
+**Local-first stack:** **Next.js + Rasa CALM + SQLite**. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-**Key Planning Docs:**
+**Key docs:**
 
-- `docs/ARCHITECTURE.md` — Short stack overview (start here)
-- `docs/IMPROVEMENT_PLAN.md` — Scorecard actions, cleanup, phases (main backlog)
-- `docs/runbooks/local-development.md` — Local setup and happy path
-- `docs/runbooks/production-deploy.md` — Scale-tier deploy
-- `docs/SYSTEM_DESIGN_REVIEW.md` — Detailed review when scaling up
-- `docs/schemas/rasa-custom-payloads.json` — Rasa `json_message` contract
-- `docs/PHASE_1_SUMMARY.md` — What Phase 1 built (35 files)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Stack overview (start here)
+- [runbooks/local-development.md](./runbooks/local-development.md) — `make dev`
+- [TEST_STRATEGY.md](./TEST_STRATEGY.md) — QA plan
+- [CLEANUP_PLAN.md](./CLEANUP_PLAN.md) — Legacy cleanup log
+- [archive/](./archive/) — Superseded Supabase-era plans
+- [schemas/rasa-custom-payloads.json](./schemas/rasa-custom-payloads.json) — Rasa custom payload contract
 - This file — Progress and day-to-day status
 
 ---
