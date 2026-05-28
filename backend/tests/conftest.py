@@ -2,11 +2,42 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-from actions.models.transaction import TransactionRow
+from actions.db.client import get_db
+from actions.models.transaction import TransactionInsert, TransactionRow
+
+
+@pytest.fixture
+def db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Isolated SQLite file per test."""
+    path = tmp_path / "test.db"
+    monkeypatch.setenv("FINGUARD_DB_PATH", str(path))
+    return path
+
+
+@pytest.fixture
+async def db_conn(db_path: Path) -> AsyncGenerator:
+    async with get_db() as conn:
+        yield conn
+
+
+@pytest.fixture
+def tx_insert() -> TransactionInsert:
+    return TransactionInsert(
+        user_id="user-a",
+        type="expense",
+        amount=25.5,
+        currency="USD",
+        category="groceries",
+        description="milk",
+        transaction_date="2026-05-15",
+        status="confirmed",
+    )
 
 
 @pytest.fixture
