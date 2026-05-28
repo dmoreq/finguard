@@ -1,15 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { LOCAL_USER_ID } from "@/lib/constants";
+import { describe, expect, it } from "vitest";
+import { resolveChatUserId } from "./resolve-user";
 
 describe("resolveChatUserId", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
-  });
-
-  it("returns null when Supabase is not configured", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
-
-    const { resolveChatUserId } = await import("./resolve-user");
-    await expect(resolveChatUserId()).resolves.toBeNull();
+  it("returns the local dev user id", async () => {
+    await expect(resolveChatUserId()).resolves.toBe(LOCAL_USER_ID);
   });
 });

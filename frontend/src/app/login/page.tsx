@@ -1,9 +1,6 @@
-import { LoginForm } from "@/features/auth/LoginForm";
+import { redirect } from "next/navigation";
 
+/** Auth deferred — send straight to chat. */
 export default function LoginPage() {
-  return (
-    <main className="login-page">
-      <LoginForm />
-    </main>
-  );
+  redirect("/chat");
 }

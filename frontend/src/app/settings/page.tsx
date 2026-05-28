@@ -1,7 +1,5 @@
 "use client";
 
-import { useSession } from "@/features/auth/useSession";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -18,60 +16,47 @@ const TIMEZONES = [
 ];
 
 export default function SettingsPage() {
-  const { userId, loading: sessionLoading } = useSession();
   const [currency, setCurrency] = useState("USD");
   const [timezone, setTimezone] = useState("UTC");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState("Local user");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
-    const supabase = createClient();
-    void supabase
-      .from("profiles")
-      .select("currency, timezone, display_name")
-      .eq("id", userId)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) return;
+    void fetch("/api/data/profile")
+      .then((res) => res.json())
+      .then((data) => {
         if (typeof data.currency === "string") setCurrency(data.currency);
         if (typeof data.timezone === "string") setTimezone(data.timezone);
         if (typeof data.display_name === "string") setDisplayName(data.display_name);
+      })
+      .catch(() => {
+        // Profile defaults are fine
       });
-  }, [userId]);
+  }, []);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!userId) return;
     setSaving(true);
     setStatus(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ currency, timezone, display_name: displayName.trim() || null })
-      .eq("id", userId);
-    setSaving(false);
-    setStatus(error ? error.message : "Settings saved.");
+    try {
+      const response = await fetch("/api/data/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          display_name: displayName.trim() || "Local user",
+          currency,
+          timezone,
+        }),
+      });
+      if (!response.ok) throw new Error("Could not save settings.");
+      setStatus("Settings saved.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save settings.");
+    } finally {
+      setSaving(false);
+    }
   };
-
-  if (sessionLoading) {
-    return (
-      <div className="app-root app-loading">
-        <p>Loading…</p>
-      </div>
-    );
-  }
-
-  if (!userId) {
-    return (
-      <div className="app-root app-loading">
-        <p>
-          <Link href="/login">Sign in</Link> to manage settings.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="app-root settings-page">
@@ -83,7 +68,7 @@ export default function SettingsPage() {
       <main className="settings-main">
         <h1>Profile settings</h1>
         <p className="settings-note">
-          Currency and timezone are used by the assistant for reports.
+          Stored locally in SQLite. Used by Rasa for currency and timezone on reports.
         </p>
         <form className="settings-form" onSubmit={handleSave}>
           <label className="login-label" htmlFor="displayName">

@@ -1,99 +1,93 @@
 import type { ChatMessage } from "@/features/chat/types";
 import type { Transaction } from "@/features/transactions/types";
-import { createClient } from "@/lib/supabase/client";
-import {
-  type ChatMessageRow,
-  type TransactionRow,
-  chatMessageToInsert,
-  mapChatMessageRow,
-  mapTransactionRow,
-} from "./map-db-row";
+import { categoryDisplay } from "@/lib/categories";
+import { clearChatMessages, loadChatMessages, saveChatMessages } from "./chat-storage";
 
-const ALL_ROWS = "00000000-0000-0000-0000-000000000000";
+type ApiTransaction = {
+  id: string;
+  type: Transaction["type"];
+  amount: number;
+  category: string;
+  description: string | null;
+  transaction_date: string;
+  status: Transaction["status"];
+  updated_at?: string;
+};
 
-export async function fetchUserTransactions(): Promise<Transaction[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .neq("status", "discarded")
-    .order("transaction_date", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return ((data ?? []) as TransactionRow[]).map(mapTransactionRow);
+function mapApiTransaction(row: ApiTransaction): Transaction {
+  return {
+    id: row.id,
+    type: row.type,
+    amount: row.amount,
+    category: categoryDisplay(row.category),
+    description: row.description,
+    date: row.transaction_date,
+    status: row.status,
+    confirmedAt: row.status === "confirmed" ? row.updated_at : undefined,
+  };
 }
 
-export async function fetchChatMessages(limit = 80): Promise<ChatMessage[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("chat_messages")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .limit(limit);
-
-  if (error) throw new Error(error.message);
-
-  const messages: ChatMessage[] = [];
-  for (const row of (data ?? []) as ChatMessageRow[]) {
-    const mapped = mapChatMessageRow(row);
-    if (mapped) messages.push(mapped);
+function parseActionsError(status: number, text: string): string {
+  try {
+    const body = JSON.parse(text) as { error?: { message?: string; code?: string } };
+    if (body.error?.message) return body.error.message;
+    if (body.error?.code === "ACTIONS_UNAVAILABLE") {
+      return "Action server is not running. From the project root, run: make dev";
+    }
+  } catch {
+    // not JSON
   }
-  return messages;
+  return text || `Request failed: ${status}`;
+}
+
+async function actionsFetch(path: string, init?: RequestInit) {
+  const response = await fetch(`/api${path}`, init);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(parseActionsError(response.status, text));
+  }
+  return response;
+}
+
+export async function fetchUserTransactions(): Promise<Transaction[]> {
+  const response = await actionsFetch("/data/transactions");
+  const data = (await response.json()) as ApiTransaction[];
+  return data.map(mapApiTransaction);
+}
+
+export async function fetchChatMessages(): Promise<ChatMessage[]> {
+  return loadChatMessages();
 }
 
 export async function persistChatMessage(
   message: ChatMessage,
-  userId: string,
+  _userId: string,
 ): Promise<string | null> {
   if (message.id === "welcome") return null;
-
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("chat_messages")
-    .insert(chatMessageToInsert(message, userId))
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-  return typeof data?.id === "string" ? data.id : null;
+  const stored = loadChatMessages();
+  const without = stored.filter((item) => item.id !== message.id);
+  saveChatMessages([...without, message]);
+  return message.id;
 }
 
 export async function updateChatMessageTxStatus(
   messageId: string,
   txStatus: "confirmed" | "discarded",
 ): Promise<void> {
-  const supabase = createClient();
-  const { data: row, error: fetchError } = await supabase
-    .from("chat_messages")
-    .select("metadata")
-    .eq("id", messageId)
-    .maybeSingle();
-
-  if (fetchError) throw new Error(fetchError.message);
-  if (!row) return;
-
-  const metadata = (row.metadata as Record<string, unknown> | null) ?? {};
-  const { error } = await supabase
-    .from("chat_messages")
-    .update({ metadata: { ...metadata, txStatus } })
-    .eq("id", messageId);
-
-  if (error) throw new Error(error.message);
+  const stored = loadChatMessages();
+  saveChatMessages(
+    stored.map((message) => (message.id === messageId ? { ...message, txStatus } : message)),
+  );
 }
 
 export async function clearChatHistory(): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from("chat_messages").delete().neq("id", ALL_ROWS);
-  if (error) throw new Error(error.message);
+  clearChatMessages();
 }
 
 export async function clearAllTransactions(): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from("transactions").delete().neq("id", ALL_ROWS);
-  if (error) throw new Error(error.message);
+  await actionsFetch("/data/transactions", { method: "DELETE" });
 }
 
-/** Deletes all chat messages and transactions for the current user (RLS-scoped). */
 export async function clearUserFinancialData(): Promise<void> {
   await clearChatHistory();
   await clearAllTransactions();

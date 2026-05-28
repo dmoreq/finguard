@@ -10,18 +10,6 @@ export async function POST(request: Request) {
     const { message } = parseChatRequest(json);
     const userId = await resolveChatUserId();
 
-    if (!userId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Sign in at /login to use chat.",
-          },
-        },
-        { status: 401 },
-      );
-    }
-
     const rate = checkChatRateLimit(userId);
     if (!rate.allowed) {
       return NextResponse.json(
@@ -48,24 +36,36 @@ export async function POST(request: Request) {
       );
     }
 
-    const rasaResponse = await fetch(`${rasaUrl}/webhooks/rest/webhook`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sender: userId,
-        message,
-        metadata: { user_id: userId },
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
+    let rasaResponse: Response;
+    try {
+      rasaResponse = await fetch(`${rasaUrl}/webhooks/rest/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender: userId,
+          message,
+          metadata: { user_id: userId },
+        }),
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch {
+      return NextResponse.json(
+        {
+          error: {
+            code: "RASA_UNAVAILABLE",
+            message: "The assistant is not running. From the project root, run: make dev",
+          },
+        },
+        { status: 503 },
+      );
+    }
 
     if (!rasaResponse.ok) {
       return NextResponse.json(
         {
           error: {
             code: "RASA_UNAVAILABLE",
-            message:
-              "The assistant is temporarily unavailable. Start the Rasa stack (see docs/runbooks/local-development.md) and try again.",
+            message: "The assistant is temporarily unavailable. Run make dev and try again.",
           },
         },
         { status: 503 },

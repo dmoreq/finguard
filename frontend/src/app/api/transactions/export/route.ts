@@ -1,5 +1,5 @@
-import type { TransactionRow } from "@/lib/data/map-db-row";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { categoryDisplay } from "@/lib/categories";
+import { proxyToActions } from "@/server/actions/proxy";
 import { NextResponse } from "next/server";
 
 function escapeCsv(value: string): string {
@@ -10,34 +10,15 @@ function escapeCsv(value: string): string {
 }
 
 export async function GET() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const response = await proxyToActions("/data/transactions");
+  if (!response.ok) {
     return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Sign in to export." } },
-      { status: 401 },
-    );
-  }
-
-  const { data, error } = await supabase
-    .from("transactions")
-    .select(
-      "id, type, amount, currency, category, description, transaction_date, status, created_at",
-    )
-    .eq("user_id", user.id)
-    .neq("status", "discarded")
-    .order("transaction_date", { ascending: false });
-
-  if (error) {
-    return NextResponse.json(
-      { error: { code: "EXPORT_FAILED", message: error.message } },
+      { error: { code: "EXPORT_FAILED", message: "Could not load transactions." } },
       { status: 500 },
     );
   }
 
+  const data = (await response.json()) as Array<Record<string, unknown>>;
   const header = [
     "id",
     "type",
@@ -49,26 +30,13 @@ export async function GET() {
     "status",
     "created_at",
   ];
-  const rows = (
-    (data ?? []) as Pick<
-      TransactionRow,
-      | "id"
-      | "type"
-      | "amount"
-      | "currency"
-      | "category"
-      | "description"
-      | "transaction_date"
-      | "status"
-      | "created_at"
-    >[]
-  ).map((row) =>
+  const rows = data.map((row) =>
     [
       row.id,
       row.type,
       row.amount,
       row.currency,
-      row.category,
+      categoryDisplay(String(row.category ?? "")),
       row.description ?? "",
       row.transaction_date,
       row.status,

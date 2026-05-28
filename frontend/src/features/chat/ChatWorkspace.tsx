@@ -234,26 +234,10 @@ export function ChatWorkspace() {
     }
   };
 
-  const handleSignOut = async () => {
-    const { createClient } = await import("@/lib/supabase/client");
-    await createClient().auth.signOut();
-    window.location.href = "/login";
-  };
-
   if (sessionLoading || dataLoading) {
     return (
       <div className="app-root app-loading">
         <p>Loading your workspace…</p>
-      </div>
-    );
-  }
-
-  if (!userId) {
-    return (
-      <div className="app-root app-loading">
-        <p>
-          <a href="/login">Sign in</a> to use Finguard.
-        </p>
       </div>
     );
   }
@@ -298,12 +282,6 @@ export function ChatWorkspace() {
           >
             Export CSV
           </a>
-          <button
-            className="button button-ghost header-button"
-            onClick={() => void handleSignOut()}
-          >
-            Sign out
-          </button>
         </div>
       </header>
 
