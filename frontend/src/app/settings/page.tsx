@@ -1,37 +1,44 @@
 "use client";
 
+import { downloadBackup, fetchUserProfile, restoreBackup } from "@/lib/data/financial-data";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const CURRENCIES = ["USD", "EUR", "GBP", "VND", "JPY", "AUD", "CAD"];
+const CURRENCIES = ["VND", "USD", "EUR", "GBP", "JPY", "AUD", "CAD"];
 const TIMEZONES = [
+  "Asia/Ho_Chi_Minh",
   "UTC",
   "America/New_York",
   "America/Los_Angeles",
   "Europe/London",
   "Europe/Paris",
-  "Asia/Ho_Chi_Minh",
   "Asia/Tokyo",
   "Australia/Sydney",
 ];
+const LOCALES = [
+  { value: "vi", label: "Tiếng Việt" },
+  { value: "en", label: "English" },
+];
 
 export default function SettingsPage() {
-  const [currency, setCurrency] = useState("USD");
-  const [timezone, setTimezone] = useState("UTC");
+  const [currency, setCurrency] = useState("VND");
+  const [timezone, setTimezone] = useState("Asia/Ho_Chi_Minh");
+  const [locale, setLocale] = useState("vi");
   const [displayName, setDisplayName] = useState("Local user");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    void fetch("/api/data/profile")
-      .then((res) => res.json())
+    void fetchUserProfile()
       .then((data) => {
-        if (typeof data.currency === "string") setCurrency(data.currency);
-        if (typeof data.timezone === "string") setTimezone(data.timezone);
-        if (typeof data.display_name === "string") setDisplayName(data.display_name);
+        setCurrency(data.currency);
+        setTimezone(data.timezone);
+        setLocale(data.locale);
+        setDisplayName(data.display_name);
       })
       .catch(() => {
-        // Profile defaults are fine
+        // defaults are fine
       });
   }, []);
 
@@ -47,10 +54,11 @@ export default function SettingsPage() {
           display_name: displayName.trim() || "Local user",
           currency,
           timezone,
+          locale,
         }),
       });
       if (!response.ok) throw new Error("Could not save settings.");
-      setStatus("Settings saved.");
+      setStatus(locale.startsWith("vi") ? "Đã lưu cài đặt." : "Settings saved.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save settings.");
     } finally {
@@ -58,37 +66,94 @@ export default function SettingsPage() {
     }
   };
 
+  const handleBackup = async () => {
+    try {
+      const blob = await downloadBackup();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `finguard-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setStatus(locale.startsWith("vi") ? "Đã tải bản sao lưu." : "Backup downloaded.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Backup failed.");
+    }
+  };
+
+  const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (
+      !window.confirm(
+        locale.startsWith("vi")
+          ? "Khôi phục sẽ ghi đè dữ liệu hiện tại. Tiếp tục?"
+          : "Restore will overwrite current data. Continue?",
+      )
+    ) {
+      return;
+    }
+    try {
+      await restoreBackup(file);
+      setStatus(locale.startsWith("vi") ? "Đã khôi phục dữ liệu." : "Data restored.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Restore failed.");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const isVi = locale.startsWith("vi");
+
   return (
     <div className="app-root settings-page">
       <header className="app-header">
         <Link href="/chat" className="button button-ghost">
-          ← Back to chat
+          ← {isVi ? "Về chat" : "Back to chat"}
         </Link>
       </header>
       <main className="settings-main">
-        <h1>Profile settings</h1>
+        <h1>{isVi ? "Cài đặt hồ sơ" : "Profile settings"}</h1>
         <p className="settings-note">
-          Stored locally in SQLite. Used by the assistant for currency and timezone on reports.
+          {isVi
+            ? "Lưu cục bộ trong SQLite. Dùng cho tiền tệ, múi giờ và ngôn ngữ chat."
+            : "Stored locally in SQLite. Used for currency, timezone, and chat language."}
         </p>
         <form className="settings-form" onSubmit={handleSave}>
           <label className="login-label" htmlFor="displayName">
-            Display name
+            {isVi ? "Tên hiển thị" : "Display name"}
           </label>
           <input
             id="displayName"
             className="login-input"
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
+            onChange={(e) => setDisplayName(e.target.value)}
           />
 
+          <label className="login-label" htmlFor="locale">
+            {isVi ? "Ngôn ngữ" : "Language"}
+          </label>
+          <select
+            id="locale"
+            className="login-input"
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+          >
+            {LOCALES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+
           <label className="login-label" htmlFor="currency">
-            Currency
+            {isVi ? "Tiền tệ" : "Currency"}
           </label>
           <select
             id="currency"
             className="login-input"
             value={currency}
-            onChange={(event) => setCurrency(event.target.value)}
+            onChange={(e) => setCurrency(e.target.value)}
           >
             {CURRENCIES.map((code) => (
               <option key={code} value={code}>
@@ -98,13 +163,13 @@ export default function SettingsPage() {
           </select>
 
           <label className="login-label" htmlFor="timezone">
-            Timezone
+            {isVi ? "Múi giờ" : "Timezone"}
           </label>
           <select
             id="timezone"
             className="login-input"
             value={timezone}
-            onChange={(event) => setTimezone(event.target.value)}
+            onChange={(e) => setTimezone(e.target.value)}
           >
             {TIMEZONES.map((zone) => (
               <option key={zone} value={zone}>
@@ -114,15 +179,53 @@ export default function SettingsPage() {
           </select>
 
           {status && (
-            <output className={status === "Settings saved." ? "settings-ok" : "login-error"}>
+            <output
+              className={
+                status.includes("saved") ||
+                status.includes("lưu") ||
+                status.includes("khôi") ||
+                status.includes("tải")
+                  ? "settings-ok"
+                  : "login-error"
+              }
+            >
               {status}
             </output>
           )}
 
           <button className="button button-primary login-submit" type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? (isVi ? "Đang lưu…" : "Saving…") : isVi ? "Lưu" : "Save"}
           </button>
         </form>
+
+        <section className="settings-form" style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>
+            {isVi ? "Sao lưu & khôi phục" : "Backup & restore"}
+          </h2>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="button button-ghost"
+              onClick={() => void handleBackup()}
+            >
+              {isVi ? "Tải bản sao lưu" : "Download backup"}
+            </button>
+            <button
+              type="button"
+              className="button button-ghost"
+              onClick={() => fileRef.current?.click()}
+            >
+              {isVi ? "Khôi phục từ file" : "Restore from file"}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => void handleRestore(e)}
+            />
+          </div>
+        </section>
       </main>
     </div>
   );

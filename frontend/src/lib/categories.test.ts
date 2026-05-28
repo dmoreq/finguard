@@ -6,7 +6,11 @@ describe("categories", () => {
     expect(categorySlug("Food & Dining")).toBe("food & dining");
   });
 
-  it("displays slugs in title case", () => {
-    expect(categoryDisplay("food & dining")).toBe("Food & Dining");
+  it("displays slugs in title case for English locale", () => {
+    expect(categoryDisplay("food & dining", "en")).toBe("Food & Dining");
+  });
+
+  it("displays Vietnamese labels when locale is vi", () => {
+    expect(categoryDisplay("dining", "vi")).toBe("Ăn uống");
   });
 });

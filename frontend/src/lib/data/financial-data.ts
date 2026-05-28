@@ -1,6 +1,5 @@
 import type { ChatMessage } from "@/features/chat/types";
 import type { Transaction } from "@/features/transactions/types";
-import { categoryDisplay } from "@/lib/categories";
 import { clearChatMessages, loadChatMessages, saveChatMessages } from "./chat-storage";
 
 type ApiTransaction = {
@@ -19,7 +18,7 @@ function mapApiTransaction(row: ApiTransaction): Transaction {
     id: row.id,
     type: row.type,
     amount: row.amount,
-    category: categoryDisplay(row.category),
+    category: row.category,
     description: row.description,
     date: row.transaction_date,
     status: row.status,
@@ -91,4 +90,77 @@ export async function clearAllTransactions(): Promise<void> {
 export async function clearUserFinancialData(): Promise<void> {
   await clearChatHistory();
   await clearAllTransactions();
+}
+
+export type UserProfile = {
+  display_name: string;
+  currency: string;
+  timezone: string;
+  locale: string;
+};
+
+export async function fetchUserProfile(): Promise<UserProfile> {
+  const response = await actionsFetch("/data/profile");
+  const data = (await response.json()) as UserProfile;
+  return {
+    display_name: data.display_name ?? "Local user",
+    currency: data.currency ?? "VND",
+    timezone: data.timezone ?? "Asia/Ho_Chi_Minh",
+    locale: data.locale ?? "vi",
+  };
+}
+
+export async function createTransaction(payload: {
+  type: "income" | "expense";
+  amount: number;
+  category: string;
+  description?: string;
+  transaction_date: string;
+}): Promise<Transaction> {
+  const response = await actionsFetch("/data/transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const row = (await response.json()) as ApiTransaction;
+  return mapApiTransaction(row);
+}
+
+export async function patchTransaction(
+  id: string,
+  payload: Partial<{
+    type: "income" | "expense";
+    amount: number;
+    category: string;
+    description: string;
+    transaction_date: string;
+  }>,
+): Promise<Transaction> {
+  const response = await actionsFetch(`/data/transactions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const row = (await response.json()) as ApiTransaction;
+  return mapApiTransaction(row);
+}
+
+export async function deleteTransaction(id: string): Promise<void> {
+  await actionsFetch(`/data/transactions/${id}`, { method: "DELETE" });
+}
+
+export async function downloadBackup(): Promise<Blob> {
+  const response = await actionsFetch("/data/backup");
+  const data = await response.json();
+  return new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+}
+
+export async function restoreBackup(file: File): Promise<void> {
+  const text = await file.text();
+  const body = JSON.parse(text) as unknown;
+  await actionsFetch("/data/backup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }

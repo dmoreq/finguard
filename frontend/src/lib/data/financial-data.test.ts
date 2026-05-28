@@ -32,7 +32,7 @@ describe("financial-data", () => {
     const rows = await fetchUserTransactions();
     expect(rows).toHaveLength(1);
     expect(rows[0]?.amount).toBe(12);
-    expect(rows[0]?.category).toBe("Food");
+    expect(rows[0]?.category).toBe("food");
     expect(rows[0]?.date).toBe("2026-05-15");
   });
 

@@ -1,10 +1,11 @@
 "use client";
 
 import type { Transaction } from "@/features/transactions/types";
+import { categoryDisplay } from "@/lib/categories";
 import { formatPlainMoney } from "@/lib/format";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { computeDashboardData } from "./finance-calculations";
+import { type DateRangeKey, computeDashboardData, rangeLabel } from "./finance-calculations";
 
 const palette = [
   "oklch(0.56 0.17 22)",
@@ -19,17 +20,26 @@ const palette = [
 
 type Props = {
   transactions: Transaction[];
+  locale?: string;
+  currency?: string;
   onClose: () => void;
 };
 
-export function DashboardPanel({ transactions, onClose }: Props) {
+export function DashboardPanel({ transactions, locale = "vi", currency = "VND", onClose }: Props) {
   const [tab, setTab] = useState<"overview" | "income" | "expenses">("overview");
-  const data = useMemo(() => computeDashboardData(transactions), [transactions]);
-  const netPositive = data.net >= 0;
-  const incomeTransactions = data.thisMonth.filter((transaction) => transaction.type === "income");
-  const expenseTransactions = data.thisMonth.filter(
-    (transaction) => transaction.type === "expense",
+  const [range, setRange] = useState<DateRangeKey>("this_month");
+  const data = useMemo(
+    () => computeDashboardData(transactions, new Date(), range, locale),
+    [transactions, range, locale],
   );
+  const netPositive = data.net >= 0;
+  const isVi = locale.startsWith("vi");
+  const money = (value: number, sign = "") =>
+    currency === "VND"
+      ? `${sign}${formatPlainMoney(value)}₫`
+      : `${sign}$${formatPlainMoney(value)}`;
+  const incomeTransactions = data.filtered.filter((transaction) => transaction.type === "income");
+  const expenseTransactions = data.filtered.filter((transaction) => transaction.type === "expense");
 
   return (
     <aside className="dashboard">
@@ -51,7 +61,7 @@ export function DashboardPanel({ transactions, onClose }: Props) {
                 fontWeight: 800,
               }}
             >
-              Report
+              {isVi ? "Báo cáo" : "Report"}
             </div>
             <div
               style={{ color: "var(--text-muted)", fontSize: 10, fontWeight: 600, marginTop: 1 }}
@@ -77,6 +87,18 @@ export function DashboardPanel({ transactions, onClose }: Props) {
             x
           </button>
         </div>
+        <div className="tabs" style={{ marginBottom: 8 }}>
+          {(["this_month", "last_month", "last_7d", "last_30d"] as const).map((key) => (
+            <button
+              key={key}
+              className={`tab ${range === key ? "active" : ""}`}
+              onClick={() => setRange(key)}
+              style={{ fontSize: 10 }}
+            >
+              {rangeLabel(key, locale)}
+            </button>
+          ))}
+        </div>
         <div className="tabs">
           {(["overview", "income", "expenses"] as const).map((name) => (
             <button
@@ -84,7 +106,9 @@ export function DashboardPanel({ transactions, onClose }: Props) {
               className={`tab ${tab === name ? "active" : ""}`}
               onClick={() => setTab(name)}
             >
-              {name.charAt(0).toUpperCase() + name.slice(1)}
+              {isVi
+                ? { overview: "Tổng quan", income: "Thu", expenses: "Chi" }[name]
+                : name.charAt(0).toUpperCase() + name.slice(1)}
             </button>
           ))}
         </div>
@@ -102,7 +126,7 @@ export function DashboardPanel({ transactions, onClose }: Props) {
             }}
           >
             <div className="stat-label" style={{ marginBottom: 4 }}>
-              Net Balance
+              {isVi ? "Số dư ròng" : "Net Balance"}
             </div>
             <div
               style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}
@@ -116,7 +140,8 @@ export function DashboardPanel({ transactions, onClose }: Props) {
                   lineHeight: 1,
                 }}
               >
-                {netPositive ? "+" : "-"}${formatPlainMoney(Math.abs(data.net))}
+                {netPositive ? "+" : "-"}
+                {money(Math.abs(data.net))}
               </div>
               {data.savingsRate !== null && (
                 <div
@@ -129,40 +154,57 @@ export function DashboardPanel({ transactions, onClose }: Props) {
                     padding: "4px 10px",
                   }}
                 >
-                  {data.savingsRate}% saved
+                  {data.savingsRate}% {isVi ? "tiết kiệm" : "saved"}
                 </div>
               )}
             </div>
+            {data.expenseTrendPct !== null && (
+              <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+                {isVi ? "Chi tiêu so kỳ trước:" : "Expense vs prior:"}{" "}
+                <strong>
+                  {data.expenseTrendPct > 0 ? "+" : ""}
+                  {data.expenseTrendPct}%
+                </strong>
+              </div>
+            )}
           </div>
 
           <div className="stat-grid">
             <StatCard
-              label="Income"
-              value={`+$${data.totalIncome >= 1000 ? `${(data.totalIncome / 1000).toFixed(1)}k` : formatPlainMoney(data.totalIncome)}`}
-              sub={`${incomeTransactions.length} transaction${incomeTransactions.length !== 1 ? "s" : ""}`}
+              label={isVi ? "Thu" : "Income"}
+              value={`+${money(data.totalIncome)}`}
+              sub={`${incomeTransactions.length} ${isVi ? "giao dịch" : "transactions"}`}
               accent="oklch(0.36 0.14 145)"
             />
             <StatCard
-              label="Expenses"
-              value={`$${data.totalExpenses >= 1000 ? `${(data.totalExpenses / 1000).toFixed(1)}k` : formatPlainMoney(data.totalExpenses)}`}
-              sub={`${expenseTransactions.length} transaction${expenseTransactions.length !== 1 ? "s" : ""}`}
+              label={isVi ? "Chi" : "Expenses"}
+              value={money(data.totalExpenses)}
+              sub={`${expenseTransactions.length} ${isVi ? "giao dịch" : "transactions"}`}
               accent="oklch(0.42 0.13 22)"
             />
             <StatCard
-              label="Daily Spend"
-              value={data.dailySpend > 0 ? `$${data.dailySpend.toFixed(0)}/day` : "-"}
-              sub={data.daysLeft > 0 ? `${data.daysLeft} days left` : "Last day"}
+              label={isVi ? "Chi/ngày" : "Daily Spend"}
+              value={
+                data.dailySpend > 0 ? `${money(data.dailySpend)}/${isVi ? "ngày" : "day"}` : "-"
+              }
+              sub={
+                data.daysLeft > 0
+                  ? `${data.daysLeft} ${isVi ? "ngày còn lại" : "days left"}`
+                  : isVi
+                    ? "Ngày cuối tháng"
+                    : "Last day"
+              }
               accent="oklch(0.60 0.18 270)"
             />
             <StatCard
-              label="Pending"
-              value={data.pendingCount > 0 ? `$${formatPlainMoney(data.pendingTotal)}` : "-"}
-              sub={`${data.pendingCount} item${data.pendingCount !== 1 ? "s" : ""}`}
+              label={isVi ? "Chờ xác nhận" : "Pending"}
+              value={data.pendingCount > 0 ? money(data.pendingTotal) : "-"}
+              sub={`${data.pendingCount} ${isVi ? "mục" : "items"}`}
               accent="oklch(0.50 0.13 72)"
             />
           </div>
 
-          <SectionLabel>Income vs Expenses</SectionLabel>
+          <SectionLabel>{isVi ? "Thu vs Chi" : "Income vs Expenses"}</SectionLabel>
           <div className="panel">
             {data.totalIncome === 0 && data.totalExpenses === 0 ? (
               <p
@@ -173,37 +215,30 @@ export function DashboardPanel({ transactions, onClose }: Props) {
                   margin: 0,
                 }}
               >
-                No data for this month yet.
+                {isVi ? "Chưa có dữ liệu trong kỳ này." : "No data for this period yet."}
               </p>
             ) : (
               <>
                 <BarRow
-                  label="Income"
+                  label={isVi ? "Thu" : "Income"}
                   value={data.totalIncome}
                   total={Math.max(data.totalIncome, data.totalExpenses)}
                   color="oklch(0.46 0.16 145)"
+                  format={money}
                 />
                 <BarRow
-                  label="Expenses"
+                  label={isVi ? "Chi" : "Expenses"}
                   value={data.totalExpenses}
                   total={Math.max(data.totalIncome, data.totalExpenses)}
                   color="oklch(0.56 0.17 22)"
+                  format={money}
                 />
-                {data.pendingTotal > 0 && (
-                  <BarRow
-                    label="Pending"
-                    value={data.pendingTotal}
-                    total={Math.max(data.totalIncome, data.totalExpenses)}
-                    color="oklch(0.60 0.13 72)"
-                    prefix="~"
-                  />
-                )}
               </>
             )}
           </div>
 
-          <SectionLabel extra={`${data.recordedTransactions.length} total`}>
-            Recent Activity
+          <SectionLabel extra={`${data.recordedTransactions.length} ${isVi ? "tổng" : "total"}`}>
+            {isVi ? "Hoạt động gần đây" : "Recent Activity"}
           </SectionLabel>
           {data.recent.length === 0 ? (
             <p
@@ -214,11 +249,18 @@ export function DashboardPanel({ transactions, onClose }: Props) {
                 lineHeight: 1.6,
               }}
             >
-              No transactions yet. Start chatting to record your finances.
+              {isVi
+                ? "Chưa có giao dịch. Hãy chat để ghi chi tiêu."
+                : "No transactions yet. Start chatting to record your finances."}
             </p>
           ) : (
             data.recent.map((transaction) => (
-              <ActivityRow key={transaction.id} transaction={transaction} />
+              <ActivityRow
+                key={transaction.id}
+                transaction={transaction}
+                locale={locale}
+                format={money}
+              />
             ))
           )}
         </div>
@@ -227,84 +269,60 @@ export function DashboardPanel({ transactions, onClose }: Props) {
       {tab === "income" && (
         <div className="side-content">
           <Hero
-            label={`Total Income / ${data.monthLabel}`}
-            value={`+$${formatPlainMoney(data.totalIncome)}`}
+            label={`${isVi ? "Tổng thu" : "Total Income"} / ${data.monthLabel}`}
+            value={`+${money(data.totalIncome)}`}
             color="oklch(0.34 0.15 145)"
             bg="linear-gradient(135deg, oklch(0.94 0.06 145), oklch(0.97 0.04 165))"
           />
-          <SectionLabel>Income Sources</SectionLabel>
+          <SectionLabel>{isVi ? "Nguồn thu" : "Income Sources"}</SectionLabel>
           <div className="panel">
             {data.incomeCategories.length === 0 ? (
               <p style={{ color: "var(--text-muted)", fontSize: 11.5, margin: 0 }}>
-                No income recorded this month.
+                {isVi ? "Chưa có thu nhập." : "No income recorded."}
               </p>
             ) : (
               data.incomeCategories.map(([category, value], index) => (
                 <BarRow
                   key={category}
-                  label={category}
+                  label={categoryDisplay(category, locale)}
                   value={value}
                   total={data.totalIncome}
                   color={`oklch(${0.4 + index * 0.04} 0.16 145)`}
+                  format={money}
                 />
               ))
             )}
           </div>
-          <SectionLabel extra={`${incomeTransactions.length} entries`}>
-            All Income Entries
-          </SectionLabel>
-          {incomeTransactions.map((transaction) => (
-            <ActivityRow key={transaction.id} transaction={transaction} />
-          ))}
         </div>
       )}
 
       {tab === "expenses" && (
         <div className="side-content">
           <Hero
-            label={`Total Spent / ${data.monthLabel}`}
-            value={`-$${formatPlainMoney(data.totalExpenses)}`}
+            label={`${isVi ? "Tổng chi" : "Total Spent"} / ${data.monthLabel}`}
+            value={`-${money(data.totalExpenses)}`}
             color="oklch(0.42 0.13 22)"
             bg="linear-gradient(135deg, oklch(0.95 0.04 22), oklch(0.97 0.025 35))"
           />
-          <div className="stat-grid">
-            <StatCard
-              label="Avg Transaction"
-              value={data.avgExpense > 0 ? `$${data.avgExpense.toFixed(2)}` : "-"}
-              sub="per expense"
-              accent="oklch(0.42 0.13 22)"
-            />
-            <StatCard
-              label="Biggest Expense"
-              value={data.maxExpense ? `$${formatPlainMoney(data.maxExpense.amount)}` : "-"}
-              sub={data.maxExpense?.category ?? "-"}
-              accent="oklch(0.56 0.17 22)"
-            />
-          </div>
-          <SectionLabel>Category Detail</SectionLabel>
+          <SectionLabel>{isVi ? "Theo danh mục" : "Category Detail"}</SectionLabel>
           <div className="panel">
             {data.expenseCategories.length === 0 ? (
               <p style={{ color: "var(--text-muted)", fontSize: 11.5, margin: 0 }}>
-                No expenses recorded this month.
+                {isVi ? "Chưa có chi tiêu." : "No expenses recorded."}
               </p>
             ) : (
               data.expenseCategories.map(([category, value], index) => (
                 <BarRow
                   key={category}
-                  label={category}
+                  label={categoryDisplay(category, locale)}
                   value={value}
                   total={data.totalExpenses}
                   color={palette[index % palette.length]}
+                  format={money}
                 />
               ))
             )}
           </div>
-          <SectionLabel extra={`${expenseTransactions.length} entries`}>
-            All Expense Entries
-          </SectionLabel>
-          {expenseTransactions.map((transaction) => (
-            <ActivityRow key={transaction.id} transaction={transaction} />
-          ))}
         </div>
       )}
     </aside>
@@ -370,10 +388,17 @@ function BarRow({
   value,
   total,
   color,
+  format,
   prefix = "",
-}: { label: string; value: number; total: number; color: string; prefix?: string }) {
+}: {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+  format: (n: number, sign?: string) => string;
+  prefix?: string;
+}) {
   const pct = total > 0 ? Math.max(2, (value / total) * 100) : 0;
-
   return (
     <div className="bar-row">
       <div className="bar-meta">
@@ -381,7 +406,8 @@ function BarRow({
           {label}
         </span>
         <span style={{ color, fontSize: 11.5, fontWeight: 800 }}>
-          {prefix}${formatPlainMoney(value)}
+          {prefix}
+          {format(value)}
         </span>
       </div>
       <div className="bar-track">
@@ -391,19 +417,25 @@ function BarRow({
   );
 }
 
-function ActivityRow({ transaction }: { transaction: Transaction }) {
+function ActivityRow({
+  transaction,
+  locale,
+  format,
+}: { transaction: Transaction; locale: string; format: (n: number, sign?: string) => string }) {
   const color = transaction.type === "income" ? "oklch(0.36 0.14 145)" : "oklch(0.42 0.13 22)";
-
   return (
     <div className="activity-row">
       <div style={{ minWidth: 0, paddingRight: 8 }}>
-        <div className="activity-title">{transaction.description || transaction.category}</div>
+        <div className="activity-title">
+          {transaction.description || categoryDisplay(transaction.category, locale)}
+        </div>
         <div className="activity-sub">
-          {transaction.category} / {transaction.date}
+          {categoryDisplay(transaction.category, locale)} / {transaction.date}
         </div>
       </div>
       <span style={{ color, flexShrink: 0, fontSize: 12.5, fontWeight: 800 }}>
-        {transaction.type === "income" ? "+" : "-"}${formatPlainMoney(transaction.amount)}
+        {transaction.type === "income" ? "+" : "-"}
+        {format(transaction.amount)}
       </span>
     </div>
   );

@@ -2,13 +2,20 @@
 
 import { useSession } from "@/features/auth/useSession";
 import { DashboardPanel } from "@/features/reports/DashboardPanel";
+import { TransactionFormModal } from "@/features/transactions/TransactionFormModal";
+import { TransactionListPanel } from "@/features/transactions/TransactionListPanel";
 import type { Transaction } from "@/features/transactions/types";
-import { categorySlug } from "@/lib/categories";
+import { categorySlug, inputPlaceholder, welcomeMessage } from "@/lib/categories";
 import {
+  type UserProfile,
   clearAllTransactions,
   clearChatHistory,
+  createTransaction,
+  deleteTransaction,
   fetchChatMessages,
+  fetchUserProfile,
   fetchUserTransactions,
+  patchTransaction,
   persistChatMessage,
   updateChatMessageTxStatus,
 } from "@/lib/data/financial-data";
@@ -20,14 +27,13 @@ import { MessageBubble, TypingIndicator } from "./MessageBubble";
 import { mapApiMessagesToChat } from "./map-api-messages";
 import type { ChatMessage } from "./types";
 
-const welcomeMessage: ChatMessage = {
+const defaultWelcome = (locale: string): ChatMessage => ({
   id: "welcome",
   role: "assistant",
   type: "text",
-  content:
-    'Hi! I\'m **Finguard**, your AI financial assistant.\n\nTell me about your finances in plain language:\n- *"I got paid $3,200 today"*\n- *"Spent $45 on groceries"*\n- *"Show me my spending report"*\n\nI\'ll record transactions for you to confirm, and summarize your spending when you ask.',
+  content: welcomeMessage(locale),
   timestamp: "initial",
-};
+});
 
 type SendOptions = {
   showUserMessage?: boolean;
@@ -35,11 +41,14 @@ type SendOptions = {
 
 export function ChatWorkspace() {
   const { userId, loading: sessionLoading } = useSession();
-  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
+  const [messages, setMessages] = useState<ChatMessage[]>([defaultWelcome("vi")]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [txPanelOpen, setTxPanelOpen] = useState(false);
+  const [formTx, setFormTx] = useState<Transaction | null | undefined>(undefined);
   const [dataError, setDataError] = useState<string | null>(null);
   const [lastUserMessage, setLastUserMessage] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
@@ -54,6 +63,10 @@ export function ChatWorkspace() {
     transactionsRef.current = transactions;
   }, [transactions]);
 
+  const locale = profile?.locale ?? "vi";
+  const currency = profile?.currency ?? "VND";
+  const isVi = locale.startsWith("vi");
+
   const refreshTransactions = useCallback(async () => {
     const rows = await fetchUserTransactions();
     setTransactions(rows);
@@ -64,15 +77,18 @@ export function ChatWorkspace() {
     setDataLoading(true);
     setDataError(null);
     try {
+      const userProfile = await fetchUserProfile();
+      setProfile(userProfile);
       const [storedMessages, storedTransactions] = await Promise.all([
         fetchChatMessages(),
         fetchUserTransactions(),
       ]);
       setTransactions(storedTransactions);
+      const welcome = defaultWelcome(userProfile.locale);
       if (storedMessages.length > 0) {
         setMessages(storedMessages);
       } else {
-        setMessages([welcomeMessage]);
+        setMessages([welcome]);
       }
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Could not load your data.";
@@ -185,7 +201,7 @@ export function ChatWorkspace() {
     }
 
     const parts = [
-      "yes, confirm this transaction",
+      isVi ? "xác nhận" : "yes, confirm this transaction",
       `$${Number(transaction.amount).toFixed(2)}`,
       categorySlug(transaction.category),
     ];
@@ -210,14 +226,16 @@ export function ChatWorkspace() {
       }
     }
 
-    await sendToAssistant("discard that transaction", { showUserMessage: false });
+    await sendToAssistant(isVi ? "hủy giao dịch" : "discard that transaction", {
+      showUserMessage: false,
+    });
   };
 
   const handleClearChat = async () => {
     if (!window.confirm("Clear chat history? Transactions stay in your records.")) return;
     try {
       await clearChatHistory();
-      setMessages([welcomeMessage]);
+      setMessages([defaultWelcome(locale)]);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Could not clear chat.");
     }
@@ -249,7 +267,9 @@ export function ChatWorkspace() {
           <div className="brand-mark">FG</div>
           <div>
             <div className="brand-title">Finguard</div>
-            <div className="brand-subtitle">AI Financial Assistant</div>
+            <div className="brand-subtitle">
+              {isVi ? "Trợ lý tài chính AI" : "AI Financial Assistant"}
+            </div>
           </div>
         </div>
         <div className="header-actions">
@@ -258,7 +278,13 @@ export function ChatWorkspace() {
             className={`button header-button ${sidebarOpen ? "button-primary" : "button-ghost"}`}
             onClick={() => setSidebarOpen((current) => !current)}
           >
-            {sidebarOpen ? "Hide Overview" : "Overview"}
+            {sidebarOpen ? (isVi ? "Ẩn báo cáo" : "Hide Overview") : isVi ? "Báo cáo" : "Overview"}
+          </button>
+          <button
+            className={`button header-button ${txPanelOpen ? "button-primary" : "button-ghost"}`}
+            onClick={() => setTxPanelOpen((current) => !current)}
+          >
+            {isVi ? "Giao dịch" : "Transactions"}
           </button>
           <button
             className="button button-ghost header-button"
@@ -303,7 +329,9 @@ export function ChatWorkspace() {
           <div ref={chatRef} className="chat-scroll">
             {messages.length <= 1 && confirmedCount === 0 && (
               <output className="empty-hint">
-                No transactions yet. Try: &quot;I spent $12 on coffee today.&quot;
+                {isVi
+                  ? 'Chưa có giao dịch. Thử: "Chi tiêu 80k cà phê sáng nay."'
+                  : 'No transactions yet. Try: "I spent $12 on coffee today."'}
               </output>
             )}
             {messages.map((message) => (
@@ -322,12 +350,52 @@ export function ChatWorkspace() {
             ))}
             {loading && <TypingIndicator />}
           </div>
-          <InputBar disabled={loading} onSend={handleSend} />
+          <InputBar disabled={loading} onSend={handleSend} placeholder={inputPlaceholder(locale)} />
         </section>
+        {txPanelOpen && (
+          <TransactionListPanel
+            transactions={transactions}
+            locale={locale}
+            currency={currency}
+            onAdd={() => setFormTx(null)}
+            onEdit={(tx) => setFormTx(tx)}
+            onDelete={async (id) => {
+              if (!window.confirm(isVi ? "Xóa giao dịch này?" : "Delete this transaction?")) return;
+              await deleteTransaction(id);
+              await refreshTransactions();
+            }}
+          />
+        )}
         {sidebarOpen && (
-          <DashboardPanel transactions={transactions} onClose={() => setSidebarOpen(false)} />
+          <DashboardPanel
+            transactions={transactions}
+            locale={locale}
+            currency={currency}
+            onClose={() => setSidebarOpen(false)}
+          />
         )}
       </main>
+      {formTx !== undefined && (
+        <TransactionFormModal
+          locale={locale}
+          initial={formTx ?? undefined}
+          onClose={() => setFormTx(undefined)}
+          onSave={async (payload) => {
+            if (payload.id) {
+              await patchTransaction(payload.id, {
+                type: payload.type,
+                amount: payload.amount,
+                category: payload.category,
+                description: payload.description,
+                transaction_date: payload.transaction_date,
+              });
+            } else {
+              await createTransaction(payload);
+            }
+            await refreshTransactions();
+          }}
+        />
+      )}
     </div>
   );
 }

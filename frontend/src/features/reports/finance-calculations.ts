@@ -1,5 +1,7 @@
 import type { Transaction } from "@/features/transactions/types";
 
+export type DateRangeKey = "this_month" | "last_month" | "last_7d" | "last_30d";
+
 export type ReportData = {
   totalIncome: number;
   totalExpenses: number;
@@ -12,10 +14,12 @@ export type ReportData = {
   pendingCount: number;
   monthLabel: string;
   txCount: number;
+  priorExpenses: number | null;
+  expenseTrendPct: number | null;
 };
 
 export type DashboardData = ReportData & {
-  thisMonth: Transaction[];
+  filtered: Transaction[];
   recordedTransactions: Transaction[];
   expenseCategories: Array<[string, number]>;
   incomeCategories: Array<[string, number]>;
@@ -26,22 +30,83 @@ export type DashboardData = ReportData & {
   projectedSpend: number;
 };
 
-export function computeDashboardData(transactions: Transaction[], now = new Date()): DashboardData {
-  const monthLabel = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const thisMonth = transactions.filter((transaction) => {
-    if (transaction.type === "pending") return false;
+const RANGE_LABELS_VI: Record<DateRangeKey, string> = {
+  this_month: "Tháng này",
+  last_month: "Tháng trước",
+  last_7d: "7 ngày qua",
+  last_30d: "30 ngày qua",
+};
 
-    try {
-      const date = new Date(`${transaction.date}T12:00:00`);
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-    } catch {
-      return true;
+const RANGE_LABELS_EN: Record<DateRangeKey, string> = {
+  this_month: "This month",
+  last_month: "Last month",
+  last_7d: "Last 7 days",
+  last_30d: "Last 30 days",
+};
+
+export function rangeLabel(key: DateRangeKey, locale = "vi"): string {
+  const labels = locale.startsWith("vi") ? RANGE_LABELS_VI : RANGE_LABELS_EN;
+  return labels[key];
+}
+
+function inRange(dateStr: string, range: DateRangeKey, now: Date): boolean {
+  const date = new Date(`${dateStr}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return true;
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  switch (range) {
+    case "this_month":
+      return date >= startOfMonth && date <= endOfMonth;
+    case "last_month": {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      return date >= start && date <= end;
     }
+    case "last_7d": {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      return date >= start && date <= now;
+    }
+    case "last_30d": {
+      const start = new Date(now);
+      start.setDate(now.getDate() - 30);
+      return date >= start && date <= now;
+    }
+    default:
+      return true;
+  }
+}
+
+function priorRange(range: DateRangeKey): DateRangeKey {
+  if (range === "this_month") return "last_month";
+  return range;
+}
+
+export function computeDashboardData(
+  transactions: Transaction[],
+  now = new Date(),
+  range: DateRangeKey = "this_month",
+  locale = "vi",
+): DashboardData {
+  const monthLabel = rangeLabel(range, locale);
+  const filtered = transactions.filter((transaction) => {
+    if (transaction.type === "pending") return false;
+    return inRange(transaction.date, range, now);
+  });
+
+  const priorFiltered = transactions.filter((transaction) => {
+    if (transaction.type === "pending") return false;
+    return inRange(transaction.date, priorRange(range), now);
   });
 
   const recordedTransactions = transactions.filter((transaction) => transaction.type !== "pending");
-  const incomeTransactions = thisMonth.filter((transaction) => transaction.type === "income");
-  const expenseTransactions = thisMonth.filter((transaction) => transaction.type === "expense");
+  const incomeTransactions = filtered.filter((transaction) => transaction.type === "income");
+  const expenseTransactions = filtered.filter((transaction) => transaction.type === "expense");
+  const priorExpenses = priorFiltered
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
   const pendingItems = transactions.filter((transaction) => transaction.type === "pending");
   const totalIncome = incomeTransactions.reduce(
     (sum, transaction) => sum + (transaction.amount || 0),
@@ -71,6 +136,11 @@ export function computeDashboardData(transactions: Transaction[], now = new Date
       return max;
     }, null) ?? null;
 
+  let expenseTrendPct: number | null = null;
+  if (priorExpenses > 0) {
+    expenseTrendPct = Math.round(((totalExpenses - priorExpenses) / priorExpenses) * 100);
+  }
+
   return {
     totalIncome,
     totalExpenses,
@@ -82,8 +152,10 @@ export function computeDashboardData(transactions: Transaction[], now = new Date
     pendingTotal,
     pendingCount: pendingItems.length,
     monthLabel,
-    txCount: thisMonth.length,
-    thisMonth,
+    txCount: filtered.length,
+    priorExpenses,
+    expenseTrendPct,
+    filtered,
     recordedTransactions,
     expenseCategories,
     incomeCategories,
@@ -101,9 +173,13 @@ export function computeDashboardData(transactions: Transaction[], now = new Date
   };
 }
 
-export function computeReportData(transactions: Transaction[], now = new Date()): ReportData {
-  const data = computeDashboardData(transactions, now);
-
+export function computeReportData(
+  transactions: Transaction[],
+  now = new Date(),
+  range: DateRangeKey = "this_month",
+  locale = "vi",
+): ReportData {
+  const data = computeDashboardData(transactions, now, range, locale);
   return {
     totalIncome: data.totalIncome,
     totalExpenses: data.totalExpenses,
@@ -116,15 +192,15 @@ export function computeReportData(transactions: Transaction[], now = new Date())
     pendingCount: data.pendingCount,
     monthLabel: data.monthLabel,
     txCount: data.txCount,
+    priorExpenses: data.priorExpenses,
+    expenseTrendPct: data.expenseTrendPct,
   };
 }
 
 function aggregateCategories(transactions: Transaction[]) {
   const map = new Map<string, number>();
-
   for (const transaction of transactions) {
     map.set(transaction.category, (map.get(transaction.category) ?? 0) + (transaction.amount || 0));
   }
-
   return [...map.entries()].sort((a, b) => b[1] - a[1]);
 }

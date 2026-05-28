@@ -64,8 +64,8 @@ describe("computeDashboardData", () => {
       [tx({ type: "expense", amount: 7, date: "not-a-date" })],
       NOW,
     );
-    expect(data.txCount).toBe(0);
-    expect(data.totalExpenses).toBe(0);
+    expect(data.txCount).toBe(1);
+    expect(data.totalExpenses).toBe(7);
     expect(data.recordedTransactions).toHaveLength(1);
   });
 
@@ -86,10 +86,10 @@ describe("computeReportData", () => {
       tx({ type: "income", amount: 100, date: "2026-05-01" }),
       tx({ type: "expense", amount: 30, date: "2026-05-02" }),
     ];
-    const report = computeReportData(transactions, NOW);
+    const report = computeReportData(transactions, NOW, "this_month", "en");
     expect(report.totalIncome).toBe(100);
     expect(report.totalExpenses).toBe(30);
     expect(report.net).toBe(70);
-    expect(report.monthLabel).toContain("May");
+    expect(report.monthLabel).toContain("This month");
   });
 });

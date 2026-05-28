@@ -4,10 +4,11 @@ import { useRef, useState } from "react";
 
 type Props = {
   disabled?: boolean;
+  placeholder?: string;
   onSend: (text: string) => void;
 };
 
-export function InputBar({ disabled = false, onSend }: Props) {
+export function InputBar({ disabled = false, placeholder, onSend }: Props) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canSend = value.trim().length > 0 && !disabled;
@@ -46,7 +47,7 @@ export function InputBar({ disabled = false, onSend }: Props) {
               send();
             }
           }}
-          placeholder='e.g. "I got paid $3,200" or "Spent $45 on groceries"...'
+          placeholder={placeholder ?? 'e.g. "I got paid $3,200" or "Spent $45 on groceries"...'}
           rows={1}
         />
       </div>
