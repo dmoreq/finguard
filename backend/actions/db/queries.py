@@ -290,3 +290,39 @@ async def update_profile(
 async def clear_user_transactions(conn: aiosqlite.Connection, user_id: str) -> None:
     await conn.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
     await conn.commit()
+
+
+async def get_chat_session_row(conn: aiosqlite.Connection, sender_id: str) -> dict[str, Any] | None:
+    cursor = await conn.execute(
+        "SELECT sender_id, user_id, state_json FROM chat_sessions WHERE sender_id = ?",
+        (sender_id,),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return None
+    return dict(row)
+
+
+async def upsert_chat_session(
+    conn: aiosqlite.Connection,
+    sender_id: str,
+    user_id: str,
+    state_json: str,
+) -> None:
+    await conn.execute(
+        """
+        INSERT INTO chat_sessions (sender_id, user_id, state_json, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT (sender_id) DO UPDATE SET
+          user_id = excluded.user_id,
+          state_json = excluded.state_json,
+          updated_at = excluded.updated_at
+        """,
+        (sender_id, user_id, state_json, _now_iso()),
+    )
+    await conn.commit()
+
+
+async def clear_chat_sessions(conn: aiosqlite.Connection) -> None:
+    await conn.execute("DELETE FROM chat_sessions")
+    await conn.commit()

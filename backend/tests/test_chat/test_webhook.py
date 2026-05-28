@@ -9,10 +9,10 @@ from actions.chat.webhook import handle_webhook
 
 
 @pytest.fixture(autouse=True)
-def _clear():
-    clear_sessions()
+async def _clear():
+    await clear_sessions()
     yield
-    clear_sessions()
+    await clear_sessions()
 
 
 @pytest.mark.asyncio

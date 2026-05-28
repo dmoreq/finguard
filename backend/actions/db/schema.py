@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE INDEX IF NOT EXISTS transactions_user_date_idx
   ON transactions (user_id, transaction_date DESC);
+
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  sender_id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  state_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 

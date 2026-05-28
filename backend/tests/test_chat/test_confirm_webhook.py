@@ -11,10 +11,10 @@ from actions.db.queries import get_transaction
 
 
 @pytest.fixture(autouse=True)
-def _clear():
-    clear_sessions()
+async def _clear():
+    await clear_sessions()
     yield
-    clear_sessions()
+    await clear_sessions()
 
 
 @pytest.mark.asyncio
