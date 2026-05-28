@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("Local user");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function SettingsPage() {
 
   const handleBackup = async () => {
     try {
+      setExporting(true);
       const blob = await downloadBackup();
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -78,6 +80,8 @@ export default function SettingsPage() {
       setStatus(locale.startsWith("vi") ? "Đã tải bản sao lưu." : "Backup downloaded.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Backup failed.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -108,122 +112,183 @@ export default function SettingsPage() {
   return (
     <div className="app-root settings-page">
       <header className="app-header">
-        <Link href="/chat" className="button button-ghost">
-          ← {isVi ? "Về chat" : "Back to chat"}
+        <Link href="/chat" className="button button-ghost" style={{ minHeight: "40px" }}>
+          ← {isVi ? "Về chat" : "Back"}
         </Link>
       </header>
-      <main className="settings-main">
-        <h1>{isVi ? "Cài đặt hồ sơ" : "Profile settings"}</h1>
-        <p className="settings-note">
-          {isVi
-            ? "Lưu cục bộ trong SQLite. Dùng cho tiền tệ, múi giờ và ngôn ngữ chat."
-            : "Stored locally in SQLite. Used for currency, timezone, and chat language."}
-        </p>
-        <form className="settings-form" onSubmit={handleSave}>
-          <label className="login-label" htmlFor="displayName">
-            {isVi ? "Tên hiển thị" : "Display name"}
-          </label>
-          <input
-            id="displayName"
-            className="login-input"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
+      <main className="settings-container">
+        <div className="settings-header">
+          <h1>{isVi ? "Cài đặt" : "Settings"}</h1>
+          <p className="settings-subtitle">
+            {isVi
+              ? "Quản lý hồ sơ, tùy chọn và dữ liệu của bạn"
+              : "Manage your profile, preferences, and data"}
+          </p>
+        </div>
 
-          <label className="login-label" htmlFor="locale">
-            {isVi ? "Ngôn ngữ" : "Language"}
-          </label>
-          <select
-            id="locale"
-            className="login-input"
-            value={locale}
-            onChange={(e) => setLocale(e.target.value)}
-          >
-            {LOCALES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+        {/* PROFILE SECTION */}
+        <section className="settings-section">
+          <div className="section-header">
+            <h2>{isVi ? "Hồ sơ" : "Profile"}</h2>
+          </div>
+          <form className="settings-form" onSubmit={handleSave}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="displayName">
+                {isVi ? "Tên hiển thị" : "Display name"}
+              </label>
+              <input
+                id="displayName"
+                className="form-input"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={isVi ? "Tên của bạn" : "Your name"}
+              />
+            </div>
 
-          <label className="login-label" htmlFor="currency">
-            {isVi ? "Tiền tệ" : "Currency"}
-          </label>
-          <select
-            id="currency"
-            className="login-input"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          >
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
+            {/* PREFERENCES SECTION */}
+            <div className="section-header" style={{ marginTop: 24 }}>
+              <h2>{isVi ? "Tùy chọn" : "Preferences"}</h2>
+            </div>
 
-          <label className="login-label" htmlFor="timezone">
-            {isVi ? "Múi giờ" : "Timezone"}
-          </label>
-          <select
-            id="timezone"
-            className="login-input"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-          >
-            {TIMEZONES.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-          </select>
+            <div className="form-group">
+              <label className="form-label" htmlFor="locale">
+                {isVi ? "Ngôn ngữ" : "Language"}
+              </label>
+              <select id="locale" className="form-input" value={locale} onChange={(e) => setLocale(e.target.value)}>
+                {LOCALES.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {status && (
-            <output
-              className={
-                status.includes("saved") ||
-                status.includes("lưu") ||
-                status.includes("khôi") ||
-                status.includes("tải")
-                  ? "settings-ok"
-                  : "login-error"
-              }
-            >
-              {status}
-            </output>
-          )}
+            <div className="form-group">
+              <label className="form-label" htmlFor="currency">
+                {isVi ? "Tiền tệ" : "Currency"}
+              </label>
+              <select
+                id="currency"
+                className="form-input"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                {CURRENCIES.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <button className="button button-primary login-submit" type="submit" disabled={saving}>
-            {saving ? (isVi ? "Đang lưu…" : "Saving…") : isVi ? "Lưu" : "Save"}
-          </button>
-        </form>
+            <div className="form-group">
+              <label className="form-label" htmlFor="timezone">
+                {isVi ? "Múi giờ" : "Timezone"}
+              </label>
+              <select
+                id="timezone"
+                className="form-input"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+              >
+                {TIMEZONES.map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <section className="settings-form" style={{ marginTop: 24 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 8 }}>
-            {isVi ? "Sao lưu & khôi phục" : "Backup & restore"}
-          </h2>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {status && (
+              <output
+                className={
+                  status.includes("saved") || status.includes("lưu") || status.includes("khôi") || status.includes("tải")
+                    ? "settings-ok"
+                    : "login-error"
+                }
+                style={{ marginTop: 16 }}
+              >
+                {status}
+              </output>
+            )}
+
             <button
-              type="button"
-              className="button button-ghost"
-              onClick={() => void handleBackup()}
+              className="button button-primary"
+              type="submit"
+              disabled={saving}
+              style={{ marginTop: 16, width: "100%" }}
             >
-              {isVi ? "Tải bản sao lưu" : "Download backup"}
+              {saving ? (isVi ? "Đang lưu…" : "Saving…") : isVi ? "Lưu cài đặt" : "Save settings"}
             </button>
-            <button
-              type="button"
-              className="button button-ghost"
-              onClick={() => fileRef.current?.click()}
-            >
-              {isVi ? "Khôi phục từ file" : "Restore from file"}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              hidden
-              onChange={(e) => void handleRestore(e)}
-            />
+          </form>
+        </section>
+
+        {/* DATA MANAGEMENT SECTION */}
+        <section className="settings-section">
+          <div className="section-header">
+            <h2>{isVi ? "Quản lý dữ liệu" : "Data management"}</h2>
+            <p className="section-description">
+              {isVi ? "Sao lưu, xuất và khôi phục dữ liệu tài chính của bạn" : "Backup, export, and restore your financial data"}
+            </p>
+          </div>
+
+          <div className="data-actions">
+            <div className="action-card">
+              <div className="action-header">
+                <h3>{isVi ? "Xuất dữ liệu" : "Export data"}</h3>
+                <p className="action-description">
+                  {isVi ? "Tải xuống bản sao lưu JSON của toàn bộ dữ liệu" : "Download JSON backup of all your data"}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void handleBackup()}
+                disabled={exporting}
+                style={{ width: "100%" }}
+              >
+                {exporting
+                  ? isVi
+                    ? "Đang tải…"
+                    : "Downloading…"
+                  : isVi
+                    ? "⬇ Xuất"
+                    : "⬇ Export"}
+              </button>
+            </div>
+
+            <div className="action-card">
+              <div className="action-header">
+                <h3>{isVi ? "Khôi phục dữ liệu" : "Restore data"}</h3>
+                <p className="action-description">
+                  {isVi ? "Tải lên tập tin JSON từ bản sao lưu trước" : "Upload JSON file from a previous backup"}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="button button-ghost"
+                onClick={() => fileRef.current?.click()}
+                style={{ width: "100%" }}
+              >
+                {isVi ? "⬆ Chọn file" : "⬆ Choose file"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => void handleRestore(e)}
+              />
+            </div>
+          </div>
+
+          <div className="data-notice">
+            <p>
+              {isVi
+                ? "💡 Dữ liệu được lưu cục bộ trên thiết bị của bạn. Sao lưu thường xuyên để tránh mất dữ liệu."
+                : "💡 Data is stored locally on your device. Backup regularly to prevent data loss."}
+            </p>
           </div>
         </section>
       </main>

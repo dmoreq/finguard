@@ -1,8 +1,17 @@
-export function formatMoney(value: number, options?: { compact?: boolean }) {
+export function formatMoney(value: number, options?: { compact?: boolean; currency?: string }) {
   const amount = Number.isFinite(value) ? value : 0;
+  const currency = options?.currency ?? "USD";
 
   if (options?.compact && Math.abs(amount) >= 1000) {
-    return `$${(amount / 1000).toFixed(amount >= 10000 ? 0 : 1)}k`;
+    const symbol = currency === "VND" ? "₫" : "$";
+    return `${symbol}${(amount / 1000).toFixed(amount >= 10000 ? 0 : 1)}k`;
+  }
+
+  if (currency === "VND") {
+    return `${amount.toLocaleString("vi-VN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })}₫`;
   }
 
   return amount.toLocaleString("en-US", {
@@ -13,11 +22,14 @@ export function formatMoney(value: number, options?: { compact?: boolean }) {
   });
 }
 
-export function formatPlainMoney(value: number) {
-  return (Number.isFinite(value) ? value : 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+export function formatPlainMoney(value: number, currency?: string) {
+  return (Number.isFinite(value) ? value : 0).toLocaleString(
+    currency === "VND" ? "vi-VN" : "en-US",
+    {
+      minimumFractionDigits: currency === "VND" ? 0 : 2,
+      maximumFractionDigits: currency === "VND" ? 0 : 2,
+    },
+  );
 }
 
 export function todayISO() {
