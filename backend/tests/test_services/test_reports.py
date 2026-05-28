@@ -103,6 +103,39 @@ async def test_query_spending_filters_category(seeded_report_transactions: str) 
 
 
 @pytest.mark.asyncio
+async def test_get_balance_vietnamese_locale(seeded_report_transactions: str) -> None:
+    result = await get_balance(
+        BalanceInput(
+            user_id=seeded_report_transactions,
+            query_period="this_month",
+            user_currency="VND",
+            user_timezone=REPORT_TIMEZONE,
+            user_locale="vi",
+        )
+    )
+    custom = result.messages[0]["custom"]
+    assert custom["type"] == "balance"
+    text = custom["text"]
+    assert "Thu:" in text or "thu" in text.lower()
+    assert custom["data"]["net"] == 2850.0
+
+
+@pytest.mark.asyncio
+async def test_query_spending_trend_when_requested(seeded_report_transactions: str) -> None:
+    result = await query_spending(
+        SpendingInput(
+            user_id=seeded_report_transactions,
+            query_period="this_month",
+            user_timezone=REPORT_TIMEZONE,
+            include_trend=True,
+        )
+    )
+    custom = result.messages[0]["custom"]
+    assert custom["type"] == "spending_report"
+    assert "trend" in custom["data"] or "prior_total" in custom["data"]
+
+
+@pytest.mark.asyncio
 async def test_list_transactions_returns_confirmed_rows(seeded_report_transactions: str) -> None:
     result = await list_transactions(
         ListInput(
