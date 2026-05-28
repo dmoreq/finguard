@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -96,8 +97,9 @@ class MockRasaHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", 5005), MockRasaHandler)
-    print("Mock Rasa listening on http://127.0.0.1:5005", flush=True)
+    port = int(os.environ.get("MOCK_RASA_PORT", "5005"))
+    server = ThreadingHTTPServer(("127.0.0.1", port), MockRasaHandler)
+    print(f"Mock Rasa listening on http://127.0.0.1:{port}", flush=True)
     server.serve_forever()
 
 
