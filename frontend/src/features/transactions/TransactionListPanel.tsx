@@ -27,7 +27,7 @@ export function TransactionListPanel({
   const [range, setRange] = useState<DateRangeKey>("this_month");
   const isVi = locale.startsWith("vi");
   const money = (value: number) =>
-    currency === "VND" ? `${formatPlainMoney(value)}₫` : `$${formatPlainMoney(value)}`;
+    currency === "VND" ? `${formatPlainMoney(value, currency)}₫` : `$${formatPlainMoney(value, currency)}`;
 
   const rows = useMemo(() => {
     const now = new Date();

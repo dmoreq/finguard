@@ -339,6 +339,8 @@ export function ChatWorkspace() {
                 key={message.id}
                 message={message}
                 transactions={transactions}
+                locale={locale}
+                currency={currency}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
                 onRetry={

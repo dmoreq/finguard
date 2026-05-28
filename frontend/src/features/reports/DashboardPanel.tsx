@@ -36,8 +36,8 @@ export function DashboardPanel({ transactions, locale = "vi", currency = "VND", 
   const isVi = locale.startsWith("vi");
   const money = (value: number, sign = "") =>
     currency === "VND"
-      ? `${sign}${formatPlainMoney(value)}₫`
-      : `${sign}$${formatPlainMoney(value)}`;
+      ? `${sign}${formatPlainMoney(value, currency)}₫`
+      : `${sign}$${formatPlainMoney(value, currency)}`;
   const incomeTransactions = data.filtered.filter((transaction) => transaction.type === "income");
   const expenseTransactions = data.filtered.filter((transaction) => transaction.type === "expense");
 

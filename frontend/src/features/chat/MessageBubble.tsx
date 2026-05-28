@@ -9,6 +9,8 @@ import type { ChatMessage } from "./types";
 type Props = {
   message: ChatMessage;
   transactions: Transaction[];
+  locale?: string;
+  currency?: string;
   onConfirm: (messageId: string, transaction: Transaction) => void;
   onCancel: (messageId: string) => void;
   onRetry?: () => void;
@@ -24,7 +26,15 @@ function resolveTxStatus(message: ChatMessage, transactions: Transaction[]): Tra
   return row?.status ?? message.txStatus ?? "pending_confirmation";
 }
 
-export function MessageBubble({ message, transactions, onConfirm, onCancel, onRetry }: Props) {
+export function MessageBubble({
+  message,
+  transactions,
+  locale = "vi",
+  currency = "VND",
+  onConfirm,
+  onCancel,
+  onRetry,
+}: Props) {
   const isUser = message.role === "user";
 
   if (message.type === "transaction" && message.transaction) {
@@ -36,6 +46,8 @@ export function MessageBubble({ message, transactions, onConfirm, onCancel, onRe
           <TransactionCard
             transaction={message.transaction}
             txStatus={txStatus}
+            locale={locale}
+            currency={currency}
             onConfirm={(transaction) => onConfirm(message.id, transaction)}
             onCancel={() => onCancel(message.id)}
           />

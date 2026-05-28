@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
 
   frontend:
     dependencies:
