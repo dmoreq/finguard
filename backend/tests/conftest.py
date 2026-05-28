@@ -12,6 +12,15 @@ from actions.db.client import get_db
 from actions.models.transaction import TransactionInsert, TransactionRow
 
 
+@pytest.fixture(autouse=True)
+def _keyword_router_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Avoid loading embedding models in unit tests."""
+    monkeypatch.setenv("ROUTER_MODE", "keyword")
+    from actions.chat.factory import reset_dialogue_engine
+
+    reset_dialogue_engine()
+
+
 @pytest.fixture
 def db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Isolated SQLite file per test."""

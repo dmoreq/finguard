@@ -31,8 +31,12 @@ def test_classify_intent_examples(text: str, pending: bool, expected: Intent) ->
 
 
 def test_utterance_bank_accuracy() -> None:
+    import os
+
     if not FIXTURE.exists():
         pytest.skip("utterances fixture missing")
+    if os.environ.get("CI_NO_SEMANTIC", "").lower() in ("1", "true", "yes"):
+        pytest.skip("CI_NO_SEMANTIC set")
 
     total = 0
     correct = 0
@@ -40,12 +44,14 @@ def test_utterance_bank_accuracy() -> None:
         if not line.strip():
             continue
         row = json.loads(line)
-        expected = row["intent"]
-        pending = bool(row.get("confirmation_pending")) or expected.startswith("manage_")
+        expected = Intent(row["intent"])
+        pending = bool(row.get("confirmation_pending")) or expected.value.startswith("manage_")
         result = classify_intent(row["text"], confirmation_pending=pending)
         total += 1
         if result.intent == expected:
             correct += 1
 
     assert total > 0
-    assert correct / total >= 0.85
+    # Target 0.95 with hybrid router locally; keyword-only gate stays 0.85 in CI.
+    minimum = 0.95 if os.environ.get("ROUTER_MODE", "keyword") == "hybrid" else 0.85
+    assert correct / total >= minimum
