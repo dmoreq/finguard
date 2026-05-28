@@ -19,10 +19,6 @@ stop_all() {
   rm -f "$RUN_DIR"/*.pid
 }
 
-cleanup_stale_ports() {
-  pkill -f "uvicorn actions.server:app" 2>/dev/null || true
-}
-cleanup_stale_ports
 trap stop_all EXIT INT TERM
 
 cd "$BACKEND"

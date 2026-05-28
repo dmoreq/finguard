@@ -24,14 +24,14 @@ env: ## Copy .env examples if missing
 	@test -f $(BACKEND)/.env || cp $(BACKEND)/.env.example $(BACKEND)/.env
 	@echo "Edit frontend/.env.local and backend/.env, then: make dev"
 
-dev: ## Start backend (:5055) + Next.js
-	@chmod +x scripts/dev-lite.sh
+dev: ## Start backend (:5055) + Next.js (stops existing dev servers first)
+	@chmod +x scripts/stop-dev.sh scripts/dev-lite.sh
+	@./scripts/stop-dev.sh
 	@./scripts/dev-lite.sh
 
 down: ## Stop dev-lite processes
-	@pkill -f "uvicorn actions.server:app" 2>/dev/null || true
-	@rm -rf .dev-lite
-	@echo "Stopped."
+	@chmod +x scripts/stop-dev.sh
+	@./scripts/stop-dev.sh
 
 frontend: ## Next.js only (http://localhost:3000)
 	pnpm frontend:dev
