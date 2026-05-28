@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 authors = [{ name = "Finguard", email = "dev@finguard.local" }]
 
 dependencies = [
-    # Action server only — full Rasa CALM runs in Docker (rasa/rasa:3.9-full)
+    # Action server only — Rasa Pro runs in Docker (rasa/rasa-pro) or mock-rasa.py locally
     "rasa-sdk>=3.9,<4",
 
     # Action server
@@ -15,8 +15,8 @@ dependencies = [
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
 
-    # Database
-    "supabase>=2.10",
+    # Local database
+    "aiosqlite>=0.20",
 
     # HTTP
     "httpx>=0.28",
@@ -41,6 +41,8 @@ dev = [
     "pytest-httpx>=0.35",
     "ruff>=0.8",
     "pyright>=1.1",
+    "litellm>=1.55",
+    "backoff>=2.2",
 ]
 
 [tool.ruff]
@@ -68,5 +70,3 @@ addopts = "-v --tb=short"
 
 [tool.uv]
 package = false
-# supabase/realtime requires websockets>=13; rasa-sdk pins <12 — override for action server
-override-dependencies = ["websockets>=13,<16"]

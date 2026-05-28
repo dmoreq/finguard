@@ -29,7 +29,7 @@ async def test_get_balance_happy_path(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.get_balance.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.get_balance.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.get_balance.get_balance_summary",
             new_callable=AsyncMock,
@@ -68,7 +68,7 @@ async def test_get_balance_negative_net(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.get_balance.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.get_balance.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.get_balance.get_balance_summary",
             new_callable=AsyncMock,
@@ -94,7 +94,7 @@ async def test_get_balance_query_failed(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.get_balance.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.get_balance.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.get_balance.get_balance_summary",
             new_callable=AsyncMock,

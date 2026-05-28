@@ -1,1 +1,1 @@
-"""Database layer — Supabase async client and query functions."""
+"""Database layer — SQLite client and query functions."""

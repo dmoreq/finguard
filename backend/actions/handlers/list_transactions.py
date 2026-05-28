@@ -7,7 +7,7 @@ from loguru import logger
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import list_transactions
 from actions.utils.formatting import format_currency, format_date_relative
 
@@ -40,9 +40,9 @@ class ActionListTransactions(Action):
         )
 
         try:
-            async with get_supabase() as client:
+            async with get_db() as conn:
                 transactions = await list_transactions(
-                    client,
+                    conn,
                     user_id,
                     limit=20,
                     period=query_period,

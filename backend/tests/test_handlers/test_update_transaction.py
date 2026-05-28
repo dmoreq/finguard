@@ -24,7 +24,7 @@ async def test_update_transaction_confirms_pending(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.update_transaction.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.update_transaction.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.update_transaction.get_transaction",
             new_callable=AsyncMock,

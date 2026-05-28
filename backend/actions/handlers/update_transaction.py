@@ -6,7 +6,7 @@ from loguru import logger
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import get_transaction, update_transaction
 from actions.utils.formatting import format_transaction_summary
 from actions.utils.pending import clear_pending_slots, get_pending_transaction_ids
@@ -47,8 +47,8 @@ class ActionUpdateTransaction(Action):
             updates["transaction_date"] = tx_date
 
         try:
-            async with get_supabase() as client:
-                existing = await get_transaction(client, user_id, transaction_id)
+            async with get_db() as conn:
+                existing = await get_transaction(conn, user_id, transaction_id)
                 if not existing:
                     dispatcher.utter_message(text="Couldn't find that transaction.")
                     return []
@@ -62,9 +62,9 @@ class ActionUpdateTransaction(Action):
                         )
                         return clear_pending_slots()
                     else:
-                        row = await update_transaction(client, user_id, transaction_id, updates)
+                        row = await update_transaction(conn, user_id, transaction_id, updates)
                 else:
-                    row = await update_transaction(client, user_id, transaction_id, updates)
+                    row = await update_transaction(conn, user_id, transaction_id, updates)
         except Exception as e:
             logger.exception(
                 "update_transaction_failed",

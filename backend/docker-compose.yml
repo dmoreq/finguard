@@ -1,12 +1,14 @@
+# Lite local: only Rasa in Docker. Actions + LiteLLM run on the host (see scripts/dev-lite.sh).
 services:
   rasa:
-    image: rasa/rasa:3.9-full
+    image: rasa/rasa-pro:3.9.20
     volumes:
       - ./rasa:/app
       - rasa-models:/app/models
     ports:
       - "5005:5005"
     environment:
+      - RASA_PRO_LICENSE=${RASA_PRO_LICENSE}
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
@@ -18,78 +20,9 @@ services:
       --port 5005
       --endpoints /app/endpoints.yml
       --credentials /app/credentials.yml
-    depends_on:
-      - action-server
-      - litellm
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
-    networks:
-      - finguard-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  action-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5055:5055"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - LITELLM_API_BASE=${LITELLM_API_BASE:-http://litellm:4000}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
-      - ENV=${ENV:-development}
-      - PORT=5055
-    restart: unless-stopped
-    networks:
-      - finguard-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5055/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  litellm:
-    image: ghcr.io/berriai/litellm:main-stable
-    volumes:
-      - ./litellm/config.yaml:/app/config.yaml
-    ports:
-      - "4000:4000"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
-    command: --config /app/config.yaml --port 4000 --debug
-    restart: unless-stopped
-    networks:
-      - finguard-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-    restart: unless-stopped
-    networks:
-      - finguard-net
-    depends_on:
-      - rasa
 
 volumes:
   rasa-models:
-  caddy-data:
-
-networks:
-  finguard-net:
-    driver: bridge

@@ -26,7 +26,7 @@ async def test_query_spending_happy_path(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.query_spending.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.query_spending.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.query_spending.get_spending_by_category",
             new_callable=AsyncMock,
@@ -58,7 +58,7 @@ async def test_query_spending_empty(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.query_spending.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.query_spending.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.query_spending.get_spending_by_category",
             new_callable=AsyncMock,
@@ -91,7 +91,7 @@ async def test_query_spending_empty_with_category_filter(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.query_spending.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.query_spending.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.query_spending.get_spending_by_category",
             new_callable=AsyncMock,
@@ -118,7 +118,7 @@ async def test_query_spending_query_failed(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.query_spending.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.query_spending.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.query_spending.get_spending_by_category",
             new_callable=AsyncMock,

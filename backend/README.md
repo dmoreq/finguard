@@ -1,38 +1,32 @@
-# Finguard backend (Rasa CALM + actions)
+# Finguard backend
 
-Python action server and Rasa assistant for chat-driven finance tracking.
+Rasa CALM assistant + Python action server.
 
-## Prerequisites
+## Lite local (default)
 
-- [uv](https://docs.astral.sh/uv/) for Python deps
-- Docker for Rasa, LiteLLM, and the action server
-- Supabase project with migrations applied (`../supabase/migrations/`)
-
-## Setup
+Only **Rasa** uses Docker. Actions and LiteLLM run on the host:
 
 ```bash
-cp .env.example .env   # service role + LLM keys
+# From repo root
+make dev
+```
+
+Or manually:
+
+```bash
+cd backend
 uv sync
+uv run uvicorn actions.server:app --host 127.0.0.1 --port 5055
+uv run litellm --config litellm/config.yaml --port 4000
+docker compose up -d    # Rasa on :5005
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `uv run pytest tests/ -q` | Unit tests (mocked Supabase) |
-| `uv run ruff check actions tests` | Lint |
-| `uv run pyright` | Typecheck |
-| `docker compose up` | Rasa + actions + LiteLLM |
-| `docker compose run --rm rasa train` | Train CALM model |
+| `make train` | Train model (from repo root) |
+| `make down` | Stop all lite processes |
+| `uv run pytest tests/ -q` | Unit tests |
 
-## Architecture
-
-- **Flows** in `rasa/data/` — CALM conversation logic
-- **Handlers** in `actions/handlers/` — Supabase mutations (service role)
-- **Queries** in `actions/db/queries.py` — every query scoped by `user_id`
-
-See `docs/decisions/001-service-role-in-actions.md` and `docs/ARCHITECTURE.md`.
-
-## websockets override
-
-`pyproject.toml` pins compatible `websockets` for the Rasa SDK — do not remove without checking `uv lock`.
+See [docs/runbooks/local-development.md](../docs/runbooks/local-development.md).

@@ -8,7 +8,7 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import insert_transaction
 from actions.models.transaction import TransactionInsert
 from actions.utils.categories import normalize_category
@@ -53,7 +53,7 @@ class ActionRecordTransaction(Action):
         tracker: Tracker,
         domain: dict[str, Any],
     ) -> list[dict]:
-        """Execute the action: validate slots, parse date, insert to Supabase."""
+        """Execute the action: validate slots, parse date, insert into SQLite."""
         transaction_type = tracker.active_flow_metadata.get("transaction_type", "expense")
 
         try:
@@ -97,10 +97,10 @@ class ActionRecordTransaction(Action):
             ai_confidence=tracker.get_slot("ai_confidence"),
         )
 
-        # Insert to Supabase
+        # Insert to SQLite
         try:
-            async with get_supabase() as client:
-                result = await insert_transaction(client, tx)
+            async with get_db() as conn:
+                result = await insert_transaction(conn, tx)
         except Exception as e:
             logger.exception(
                 "transaction_insert_failed",

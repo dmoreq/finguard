@@ -38,7 +38,7 @@ async def test_record_transaction_happy_path(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.record_transaction.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.record_transaction.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.record_transaction.insert_transaction",
             new_callable=AsyncMock,

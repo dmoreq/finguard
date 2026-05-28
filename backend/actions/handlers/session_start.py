@@ -7,8 +7,8 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
-from actions.db.queries import get_latest_pending_transaction
+from actions.db.client import get_db
+from actions.db.queries import get_latest_pending_transaction, get_profile
 
 
 class ActionSessionStart(Action):
@@ -38,30 +38,21 @@ class ActionSessionStart(Action):
         logger.info("session_start", user_id=user_id)
 
         try:
-            async with get_supabase() as client:
-                response = (
-                    await client.table("profiles")
-                    .select("display_name, currency, timezone")
-                    .eq("id", user_id)
-                    .single()
-                    .execute()
-                )
-
-                profile = response.data if response.data else {}
-                pending = await get_latest_pending_transaction(client, user_id)
+            async with get_db() as conn:
+                profile = await get_profile(conn, user_id)
+                pending = await get_latest_pending_transaction(conn, user_id)
         except Exception as e:
             logger.warning(
                 "session_start_profile_fetch_failed",
                 user_id=user_id,
                 error=str(e),
             )
-            profile = {}
+            profile = {"currency": "USD", "timezone": "UTC", "display_name": user_id[:8]}
             pending = None
 
-        # Extract profile fields with defaults
-        currency = profile.get("currency", "USD")
-        timezone = profile.get("timezone", "UTC")
-        display_name = profile.get("display_name", user_id[:8])
+        currency = profile["currency"]
+        timezone = profile["timezone"]
+        display_name = profile["display_name"]
 
         events: list[dict] = [
             SlotSet("user_id", user_id),

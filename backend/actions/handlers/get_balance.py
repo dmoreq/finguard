@@ -6,7 +6,7 @@ from loguru import logger
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import get_balance_summary
 from actions.utils.formatting import format_currency
 
@@ -38,9 +38,9 @@ class ActionGetBalance(Action):
         )
 
         try:
-            async with get_supabase() as client:
+            async with get_db() as conn:
                 balance = await get_balance_summary(
-                    client,
+                    conn,
                     user_id,
                     query_period,
                     user_timezone,

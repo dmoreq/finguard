@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,23 +11,10 @@ from rasa_sdk.events import SlotSet
 from actions.handlers.session_start import ActionSessionStart
 
 
-def _mock_profile_client(
-    profile_data: dict | None,
-    *,
-    execute_side_effect: Exception | None = None,
-) -> AsyncMock:
-    mock_client = MagicMock()
+def _mock_db_cm() -> AsyncMock:
     mock_cm = AsyncMock()
-    mock_cm.__aenter__.return_value = mock_client
+    mock_cm.__aenter__.return_value = MagicMock()
     mock_cm.__aexit__.return_value = None
-
-    mock_execute = AsyncMock(
-        return_value=MagicMock(data=profile_data),
-        side_effect=execute_side_effect,
-    )
-    chain = mock_client.table.return_value.select.return_value.eq.return_value.single
-    chain.return_value.execute = mock_execute
-
     return mock_cm
 
 
@@ -43,10 +31,13 @@ async def test_session_start_loads_profile_from_metadata(
         "currency": "EUR",
         "timezone": "Europe/Berlin",
     }
-    mock_cm = _mock_profile_client(profile)
 
     with (
-        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.session_start.get_db", return_value=_mock_db_cm()),
+        patch(
+            "actions.handlers.session_start.get_profile",
+            new=AsyncMock(return_value=profile),
+        ),
         patch(
             "actions.handlers.session_start.get_latest_pending_transaction",
             new=AsyncMock(return_value=None),
@@ -70,10 +61,15 @@ async def test_session_start_falls_back_to_sender_id(
 ) -> None:
     mock_tracker.latest_message = {}
     mock_tracker.sender_id = "sender-123"
-    mock_cm = _mock_profile_client({"display_name": "Bob", "currency": "USD", "timezone": "UTC"})
 
     with (
-        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.session_start.get_db", return_value=_mock_db_cm()),
+        patch(
+            "actions.handlers.session_start.get_profile",
+            new=AsyncMock(
+                return_value={"display_name": "Bob", "currency": "USD", "timezone": "UTC"},
+            ),
+        ),
         patch(
             "actions.handlers.session_start.get_latest_pending_transaction",
             new=AsyncMock(return_value=None),
@@ -104,9 +100,14 @@ async def test_session_start_profile_fetch_failure_uses_defaults(
     mock_tracker: MagicMock,
 ) -> None:
     mock_tracker.latest_message = {"metadata": {"user_id": "user-99"}}
-    mock_cm = _mock_profile_client(None, execute_side_effect=RuntimeError("db down"))
 
-    with patch("actions.handlers.session_start.get_supabase", return_value=mock_cm):
+    with (
+        patch("actions.handlers.session_start.get_db", return_value=_mock_db_cm()),
+        patch(
+            "actions.handlers.session_start.get_profile",
+            new=AsyncMock(side_effect=RuntimeError("db down")),
+        ),
+    ):
         events = await ActionSessionStart().run(mock_dispatcher, mock_tracker, {})
 
     assert events == [
@@ -127,7 +128,6 @@ async def test_session_start_syncs_pending_transaction(
 
     mock_tracker.latest_message = {"metadata": {"user_id": "user-pending"}}
     profile = {"display_name": "Alice", "currency": "USD", "timezone": "UTC"}
-    mock_cm = _mock_profile_client(profile)
     pending = TransactionRow(
         id="tx-pending-1",
         user_id="user-pending",
@@ -140,12 +140,16 @@ async def test_session_start_syncs_pending_transaction(
         status="pending_confirmation",
         source="manual_chat",
         ai_confidence=None,
-        created_at="2026-05-27T00:00:00Z",
-        updated_at="2026-05-27T00:00:00Z",
+        created_at=datetime(2026, 5, 27, 12, 0, 0),
+        updated_at=datetime(2026, 5, 27, 12, 0, 0),
     )
 
     with (
-        patch("actions.handlers.session_start.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.session_start.get_db", return_value=_mock_db_cm()),
+        patch(
+            "actions.handlers.session_start.get_profile",
+            new=AsyncMock(return_value=profile),
+        ),
         patch(
             "actions.handlers.session_start.get_latest_pending_transaction",
             new=AsyncMock(return_value=pending),

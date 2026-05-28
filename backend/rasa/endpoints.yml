@@ -1,6 +1,6 @@
-# Action server endpoint
+# Lite local: action server on host (scripts/dev-lite.sh). Docker Rasa reaches it via host.docker.internal.
 action_endpoint:
-  url: "http://action-server:5055/webhook"
+  url: "http://host.docker.internal:5055/webhook"
 
 # Tracker store — in-memory for development, Redis for production
 tracker_store:

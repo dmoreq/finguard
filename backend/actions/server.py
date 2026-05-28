@@ -8,10 +8,19 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 from rasa_sdk.executor import ActionExecutor
 
+from actions.db.client import get_db
+from actions.db.local_user import LOCAL_USER_ID
+from actions.db.queries import (
+    clear_user_transactions,
+    get_profile,
+    list_user_transactions,
+    update_profile,
+)
 from actions.utils.logging import setup_logging
 
 
@@ -39,11 +48,51 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 async def health() -> dict:
     """Health check endpoint for Docker Compose."""
     return {"status": "ok", "service": "action-server"}
+
+
+@app.get("/data/transactions")
+async def data_transactions(user_id: str = LOCAL_USER_ID) -> list[dict]:
+    async with get_db() as conn:
+        rows = await list_user_transactions(conn, user_id)
+    return [row.model_dump(mode="json") for row in rows]
+
+
+@app.delete("/data/transactions")
+async def data_clear_transactions(user_id: str = LOCAL_USER_ID) -> dict:
+    async with get_db() as conn:
+        await clear_user_transactions(conn, user_id)
+    return {"ok": True}
+
+
+@app.get("/data/profile")
+async def data_get_profile(user_id: str = LOCAL_USER_ID) -> dict:
+    async with get_db() as conn:
+        return await get_profile(conn, user_id)
+
+
+@app.patch("/data/profile")
+async def data_update_profile(request: Request, user_id: str = LOCAL_USER_ID) -> dict:
+    body = await request.json()
+    async with get_db() as conn:
+        return await update_profile(
+            conn,
+            user_id,
+            display_name=body.get("display_name"),
+            currency=body.get("currency"),
+            timezone=body.get("timezone"),
+        )
 
 
 @app.post("/webhook")

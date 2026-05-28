@@ -6,7 +6,7 @@ from loguru import logger
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import get_spending_by_category
 from actions.utils.formatting import format_currency
 
@@ -40,9 +40,9 @@ class ActionQuerySpending(Action):
         )
 
         try:
-            async with get_supabase() as client:
+            async with get_db() as conn:
                 spending = await get_spending_by_category(
-                    client,
+                    conn,
                     user_id,
                     query_period,
                     user_timezone,

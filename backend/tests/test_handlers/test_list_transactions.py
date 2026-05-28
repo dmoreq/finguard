@@ -55,7 +55,7 @@ async def test_list_transactions_happy_path(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.list_transactions.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.list_transactions.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.list_transactions.list_transactions",
             new_callable=AsyncMock,
@@ -87,7 +87,7 @@ async def test_list_transactions_empty(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.list_transactions.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.list_transactions.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.list_transactions.list_transactions",
             new_callable=AsyncMock,
@@ -119,7 +119,7 @@ async def test_list_transactions_empty_with_category_filter(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.list_transactions.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.list_transactions.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.list_transactions.list_transactions",
             new_callable=AsyncMock,
@@ -147,7 +147,7 @@ async def test_list_transactions_query_failed(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.list_transactions.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.list_transactions.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.list_transactions.list_transactions",
             new_callable=AsyncMock,

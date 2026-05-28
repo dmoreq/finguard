@@ -6,7 +6,7 @@ from loguru import logger
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.db.client import get_supabase
+from actions.db.client import get_db
 from actions.db.queries import delete_transaction
 from actions.utils.pending import clear_pending_slots, get_pending_transaction_ids
 
@@ -39,8 +39,8 @@ class ActionDeleteTransaction(Action):
         )
 
         try:
-            async with get_supabase() as client:
-                success = await delete_transaction(client, user_id, transaction_id)
+            async with get_db() as conn:
+                success = await delete_transaction(conn, user_id, transaction_id)
         except Exception as e:
             logger.exception(
                 "delete_transaction_failed",

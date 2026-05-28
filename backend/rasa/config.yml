@@ -10,7 +10,7 @@ pipeline:
     llm:
       provider: openai              # LiteLLM uses OpenAI-compatible API
       model: finguard-primary       # Model alias from litellm/config.yaml
-      api_base: "http://litellm:4000"
+      api_base: "http://host.docker.internal:4000"
       api_key: ${LITELLM_MASTER_KEY}
       temperature: 0.1              # Low temp = deterministic slot filling
       max_tokens: 256               # Commands are short
@@ -25,7 +25,7 @@ policies:
     llm:
       provider: openai
       model: finguard-primary
-      api_base: "http://litellm:4000"
+      api_base: "http://host.docker.internal:4000"
       api_key: ${LITELLM_MASTER_KEY}
       temperature: 0.0              # Deterministic routing
       max_tokens: 128

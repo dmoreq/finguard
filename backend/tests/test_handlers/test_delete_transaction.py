@@ -20,7 +20,7 @@ async def test_delete_transaction_happy_path(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.delete_transaction.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.delete_transaction.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.delete_transaction.delete_transaction",
             new_callable=AsyncMock,
@@ -57,7 +57,7 @@ async def test_delete_transaction_not_found(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.delete_transaction.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.delete_transaction.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.delete_transaction.delete_transaction",
             new_callable=AsyncMock,
@@ -82,7 +82,7 @@ async def test_delete_transaction_db_error(
     mock_cm.__aexit__.return_value = None
 
     with (
-        patch("actions.handlers.delete_transaction.get_supabase", return_value=mock_cm),
+        patch("actions.handlers.delete_transaction.get_db", return_value=mock_cm),
         patch(
             "actions.handlers.delete_transaction.delete_transaction",
             new_callable=AsyncMock,
