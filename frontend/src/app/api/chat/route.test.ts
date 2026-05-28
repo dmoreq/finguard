@@ -6,6 +6,11 @@ vi.mock("@/server/chat/resolve-user", () => ({
   getRasaUrl: vi.fn(),
 }));
 
+vi.mock("@/server/chat/rate-limit", () => ({
+  checkChatRateLimit: vi.fn(),
+}));
+
+import { checkChatRateLimit } from "@/server/chat/rate-limit";
 import { getChatBackendUrl, resolveChatUserId } from "@/server/chat/resolve-user";
 import { POST } from "./route";
 
@@ -13,7 +18,27 @@ describe("POST /api/chat", () => {
   beforeEach(() => {
     vi.mocked(resolveChatUserId).mockReset();
     vi.mocked(getChatBackendUrl).mockReset();
+    vi.mocked(checkChatRateLimit).mockReset();
     vi.mocked(resolveChatUserId).mockResolvedValue("local-user");
+    vi.mocked(checkChatRateLimit).mockReturnValue({ allowed: true });
+  });
+
+  it("returns 429 when rate limit is exceeded", async () => {
+    vi.mocked(getChatBackendUrl).mockReturnValue("http://localhost:5055");
+    vi.mocked(checkChatRateLimit).mockReturnValue({ allowed: false, retryAfterSec: 42 });
+
+    const response = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "hello" }),
+      }),
+    );
+
+    expect(response.status).toBe(429);
+    const body = await response.json();
+    expect(body.error?.code).toBe("RATE_LIMITED");
+    expect(body.error?.message).toContain("42");
   });
 
   it("returns 503 when CHAT_BACKEND_URL is not set", async () => {
