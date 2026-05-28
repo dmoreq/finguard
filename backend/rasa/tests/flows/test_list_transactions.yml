@@ -1,0 +1,15 @@
+stub_custom_actions:
+  action_list_transactions:
+    responses:
+      - text: "**Recent transactions:**\n  − $12.00 — Coffee"
+
+test_cases:
+  - test_case: list recent transactions
+    steps:
+      - user: "show my recent transactions"
+        assertions:
+          - flow_started:
+              operator: "all"
+              flow_ids:
+                - list_recent_transactions
+          - action_executed: action_list_transactions

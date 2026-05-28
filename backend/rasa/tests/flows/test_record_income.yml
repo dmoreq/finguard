@@ -1,0 +1,24 @@
+stub_custom_actions:
+  action_record_transaction:
+    events:
+      - event: slot
+        name: last_transaction_id
+        value: "tx-income-001"
+      - event: slot
+        name: confirmation_pending
+        value: true
+    responses:
+      - custom:
+          type: transaction_pending
+          text: "Recorded $2,000.00 income (mock)."
+
+test_cases:
+  - test_case: record income happy path
+    steps:
+      - user: "I got paid $2000 salary today"
+        assertions:
+          - flow_started:
+              operator: "all"
+              flow_ids:
+                - record_income
+          - action_executed: action_record_transaction

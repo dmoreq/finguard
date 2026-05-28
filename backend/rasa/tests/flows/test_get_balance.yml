@@ -1,0 +1,15 @@
+stub_custom_actions:
+  action_get_balance:
+    responses:
+      - text: "Income: $3,200.00 | Expenses: $500.00 | Net: $2,700.00"
+
+test_cases:
+  - test_case: get balance this month
+    steps:
+      - user: "what is my balance this month?"
+        assertions:
+          - flow_started:
+              operator: "all"
+              flow_ids:
+                - get_balance
+          - action_executed: action_get_balance
